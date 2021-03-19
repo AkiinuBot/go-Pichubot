@@ -1,0 +1,8 @@
+
+	{
+			# 输出的日志等级 DEBUG INFO WARN SERVE
+			logmode: INFO
+
+			#cqhttp 的websocket服务器地址
+			ws-ip: "localhost:6700"
+	}
