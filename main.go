@@ -3,11 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/url"
-	"os"
-	"path/filepath"
 	"time"
+
+	"github.com/0ojixueseno0/go-Pichubot-base/pichumod"
 
 	"github.com/gorilla/websocket"
 	"github.com/hjson/hjson-go"
@@ -16,28 +15,16 @@ import (
 // var host = flag.String("ip", "localhost:6700", "CQbot program's host (with port)")
 var Fastmode = flag.Bool("faststart", false, "是否快速启动")
 
-type setmode struct {
-	logMode string
-	logLvl  int
-	wsIP    string
-}
-
-var Settings setmode
-
-var programLoc, _ = os.Executable()
-var programPath = filepath.Dir(programLoc)
-
 func main() {
-	flag.Parse()   // 解析fastmode
-	readSettings() // 读取设置
-	linkLog()
-	defer LogFile.Close()
+	flag.Parse() // 解析fastmode
+	// readSettings() // 读取设置 已经挪到了Pichumod
+	// linkLog() 已经挪到了Pichumod
 	if !*Fastmode {
 		fmt.Println("Program will start in 5 seconds (You can Type Ctrl+C to Cancel)")
 		time.Sleep(5 * time.Second)
 	}
 	for {
-		core(Settings.wsIP)
+		core(pichumod.Config.WSIP)
 	}
 }
 
@@ -50,7 +37,10 @@ func core(host string) {
 		fmt.Println(err)
 		return
 	} else {
-		fmt.Println("成功连接到 Websocket 服务器" + Settings.wsIP)
+		fmt.Println("成功连接到 Websocket 服务器" + pichumod.Config.WSIP)
+		// tools.connect = c
+		pichumod.Connect = c
+		pichumod.SendPrivateMsg("机器人成功启动", 2773173293)
 	}
 
 	// 处理收到的所有POST
@@ -72,14 +62,14 @@ func core(host string) {
 			switch receive["message_type"] {
 			// 私聊信息
 			case "private":
-				PrintLog(2, fmt.Sprintf("[↓][私聊][%s(%.f)]: %s", sender["nickname"], sender["user_id"].(float64), receive["message"]))
+				pichumod.PrintLog(2, fmt.Sprintf("[↓][私聊][%s(%.f)]: %s", sender["nickname"], sender["user_id"].(float64), receive["message"]))
 
 			// 群聊信息
 			case "group":
-				PrintLog(2, fmt.Sprintf("[↓][群聊(%.f)][%s(%.f)]: %s", receive["group_id"].(float64), sender["nickname"], sender["user_id"].(float64), receive["message"]))
+				pichumod.PrintLog(2, fmt.Sprintf("[↓][群聊(%.f)][%s(%.f)]: %s", receive["group_id"].(float64), sender["nickname"], sender["user_id"].(float64), receive["message"]))
 
 			default:
-				PrintLog(3, fmt.Sprintf("Cannot Parse 'message' event -> %s", receive))
+				pichumod.PrintLog(3, fmt.Sprintf("Cannot Parse 'message' event -> %s", receive))
 			}
 
 		// 通知事件
@@ -113,7 +103,7 @@ func core(host string) {
 			case "notify":
 
 			default:
-				PrintLog(3, fmt.Sprintf("Cannot Parse 'notice' event -> %s", receive))
+				pichumod.PrintLog(3, fmt.Sprintf("Cannot Parse 'notice' event -> %s", receive))
 			}
 
 		// 请求事件
@@ -126,7 +116,7 @@ func core(host string) {
 			case "group":
 
 			default:
-				PrintLog(3, fmt.Sprintf("Cannot Parse 'request' event -> %s", receive))
+				pichumod.PrintLog(3, fmt.Sprintf("Cannot Parse 'request' event -> %s", receive))
 			}
 		// 元事件
 		case "meta_event":
@@ -136,12 +126,13 @@ func core(host string) {
 
 			// 心跳包
 			case "heartbeat":
-				PrintLog(1, "Received a heartbeat package.")
+				pichumod.PrintLog(1, "Received a heartbeat package.")
 			default:
-				PrintLog(3, fmt.Sprintf("Cannot Parse 'meta_event' event -> %s", receive))
+				pichumod.PrintLog(3, fmt.Sprintf("Cannot Parse 'meta_event' event -> %s", receive))
 			}
 		default:
-			PrintLog(3, fmt.Sprintf("Got Error Package -> %s", receive))
+			// if receive["echo"]
+			pichumod.PrintLog(3, fmt.Sprintf("Got Error Package -> %s", receive))
 		}
 	}
 }
@@ -155,136 +146,77 @@ func jsonParse(input []byte) (map[string]interface{}, error) {
 	return output, nil
 }
 
-// 在屏幕上输出日志并储存
-// 日志等级 - int
-// DEBUG    - 1
-// INFO     - 2
-// WARNING  - 3
-// SEVERE   - 4
-func PrintLog(level int, message string) {
-	time := time.Now().Format("15:04:05")
-	// SEVERE, WARNING, INFO and DEBUG
-	switch level {
-	// debug level
-	case 1:
-		if Settings.logLvl == 4 {
-			fmt.Printf("[%s][Debug]:%s\n", time, message)
-			_, err := LogFile.WriteString(fmt.Sprintf("[%s][Debug] %s\n", time, message))
-			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
-			}
-		}
+// // 在屏幕上输出日志并储存
+// // 日志等级 - int
+// // DEBUG   -  1
+// // INFO    -  2
+// // WARNING -  3
+// // SEVERE  -  4
+// func PrintLog(level int, message string) {
+// 	time := time.Now().Format("15:04:05")
+// 	// SEVERE, WARNING, INFO and DEBUG
+// 	switch level {
+// 	// debug level
+// 	case 1:
+// 		if Settings.logLvl == 4 {
+// 			fmt.Printf("[%s][Debug]:%s\n", time, message)
+// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][Debug] %s\n", time, message))
+// 			if err != nil {
+// 				panic("Coudle not write data to log file. Permission denied")
+// 			}
+// 		}
 
-	// info level
-	case 2:
-		if Settings.logLvl >= 3 {
-			fmt.Printf("[%s][INFO]:%s\n", time, message)
-			_, err := LogFile.WriteString(fmt.Sprintf("[%s][INFO] %s\n", time, message))
-			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
-			}
-		}
+// 	// info level
+// 	case 2:
+// 		if Settings.logLvl >= 3 {
+// 			fmt.Printf("[%s][INFO]:%s\n", time, message)
+// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][INFO] %s\n", time, message))
+// 			if err != nil {
+// 				panic("Coudle not write data to log file. Permission denied")
+// 			}
+// 		}
 
-	// warning level
-	case 3:
-		if Settings.logLvl >= 2 {
-			fmt.Printf("[%s][WARN]:%s\n", time, message)
-			_, err := LogFile.WriteString(fmt.Sprintf("[%s][WARN] %s\n", time, message))
-			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
-			}
-		}
+// 	// warning level
+// 	case 3:
+// 		if Settings.logLvl >= 2 {
+// 			fmt.Printf("[%s][WARN]:%s\n", time, message)
+// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][WARN] %s\n", time, message))
+// 			if err != nil {
+// 				panic("Coudle not write data to log file. Permission denied")
+// 			}
+// 		}
 
-	// severe level
-	case 4:
-		if Settings.logLvl >= 1 {
-			fmt.Printf("[%s][!SERVE!]:%s\n", time, message)
-			_, err := LogFile.WriteString(fmt.Sprintf("[%s][!SERVE!] %s\n", time, message))
-			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
-			}
-		}
+// 	// severe level
+// 	case 4:
+// 		if Settings.logLvl >= 1 {
+// 			fmt.Printf("[%s][!SERVE!]:%s\n", time, message)
+// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][!SERVE!] %s\n", time, message))
+// 			if err != nil {
+// 				panic("Coudle not write data to log file. Permission denied")
+// 			}
+// 		}
 
-	// sth wrong with level
-	default:
-		PrintLog(4, "A code error was found in PrintLog")
-	}
-}
+// 	// sth wrong with level
+// 	default:
+// 		PrintLog(4, "A code error was found in PrintLog")
+// 	}
+// }
 
-func readSettings() {
-	file, err := os.Open("settings.hjson")
-	if err != nil {
-		if os.IsNotExist(err) {
-			createSettings()
-			readSettings()
-		} else {
-			panic("[!SERVE!] Can't read settings.hjson! Please check your permission.")
-		}
-	} else {
-		content, err := ioutil.ReadAll(file)
-		if err != nil {
-			panic(err)
-		}
-		var data map[string]interface{}
-		if err := hjson.Unmarshal(content, &data); err != nil {
-			panic(err)
-		}
-		configParse(data)
-	}
-}
+// var LogFile *os.File
 
-// 解析配置 存入Settings
-func configParse(data map[string]interface{}) {
-	Settings.logMode = data["logmode"].(string)
-	Settings.wsIP = data["ws-ip"].(string)
-	switch Settings.logMode {
-	case "NONE":
-		Settings.logLvl = 0
-	case "DEBUG":
-		Settings.logLvl = 4
-	case "INFO":
-		Settings.logLvl = 3
-	case "WARN":
-		Settings.logLvl = 2
-	case "SERVE":
-		Settings.logLvl = 1
-	default:
-		panic("Found something wrong in settings.hjson.logmode")
-	}
-}
+// func linkLog() {
 
-func createSettings() {
-	setting := []byte(`{
-	// 输出的日志等级 DEBUG INFO WARN SERVE NONE
-	logmode: INFO
+// 	file, err := os.OpenFile(filepath.Join(programPath, "logs/Pichubot-"+string(time.Now().Format("2006-01-02"))+".log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+// 	if err != nil {
+// 		if os.IsNotExist(err) {
+// 			file, err = os.Create(filepath.Join(programPath, "logs/Pichubot-"+string(time.Now().Format("2006-01-02"))+".log"))
+// 			if err != nil {
+// 				panic("[!SERVE!] Could not create the log file. Permission denied.") // maybe
+// 			}
+// 		} else {
+// 			panic("[!SERVE!] Can't read log Please check your permission.")
+// 		}
+// 	}
+// 	LogFile = file
 
-	// cqhttp 的websocket服务器地址
-	ws-ip: "localhost:6700"
-}`)
-	settingFile, err := os.Create(filepath.Join(programPath, "settings.hjson"))
-	if err != nil {
-		panic(err)
-	}
-	settingFile.Write(setting)
-	fmt.Println("默认配置文件已经生成 请编辑 settings.hjson 后重启程序")
-	settingFile.Close()
-}
-
-var LogFile *os.File
-
-func linkLog() {
-
-	file, err := os.OpenFile(filepath.Join(programPath, "logs/Pichubot-"+string(time.Now().Format("2006-01-02"))+".log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		if os.IsNotExist(err) {
-			file, err = os.Create(filepath.Join(programPath, "logs/Pichubot-"+string(time.Now().Format("2006-01-02"))+".log"))
-			if err != nil {
-				panic("[!SERVE!] Could not create the log file. Permission denied.") // maybe
-			}
-		} else {
-			panic("[!SERVE!] Can't read log Please check your permission.")
-		}
-	}
-	LogFile = file
-
-}
+// }
