@@ -1,8 +1,0 @@
-# .gitignore
-data/
-logs/
-test/
-device.json
-config.hjson
-go-cqhttp-v*
-go-Pichubot-base*
