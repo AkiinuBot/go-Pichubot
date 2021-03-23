@@ -17,6 +17,8 @@ var Fastmode = flag.Bool("faststart", false, "是否快速启动")
 
 func main() {
 	flag.Parse() // 解析fastmode
+	pichumod.ReadSettings()
+	defer pichumod.LogFile.Close()
 	// readSettings() // 读取设置 已经挪到了Pichumod
 	// linkLog() 已经挪到了Pichumod
 	if !*Fastmode {
@@ -49,6 +51,9 @@ func core(host string) {
 		if err != nil {
 			fmt.Println(err)
 		}
+		// go func() {
+
+		// }()
 		receive, err := jsonParse(message)
 		if err != nil {
 			fmt.Println(err)
@@ -145,78 +150,3 @@ func jsonParse(input []byte) (map[string]interface{}, error) {
 	}
 	return output, nil
 }
-
-// // 在屏幕上输出日志并储存
-// // 日志等级 - int
-// // DEBUG   -  1
-// // INFO    -  2
-// // WARNING -  3
-// // SEVERE  -  4
-// func PrintLog(level int, message string) {
-// 	time := time.Now().Format("15:04:05")
-// 	// SEVERE, WARNING, INFO and DEBUG
-// 	switch level {
-// 	// debug level
-// 	case 1:
-// 		if Settings.logLvl == 4 {
-// 			fmt.Printf("[%s][Debug]:%s\n", time, message)
-// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][Debug] %s\n", time, message))
-// 			if err != nil {
-// 				panic("Coudle not write data to log file. Permission denied")
-// 			}
-// 		}
-
-// 	// info level
-// 	case 2:
-// 		if Settings.logLvl >= 3 {
-// 			fmt.Printf("[%s][INFO]:%s\n", time, message)
-// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][INFO] %s\n", time, message))
-// 			if err != nil {
-// 				panic("Coudle not write data to log file. Permission denied")
-// 			}
-// 		}
-
-// 	// warning level
-// 	case 3:
-// 		if Settings.logLvl >= 2 {
-// 			fmt.Printf("[%s][WARN]:%s\n", time, message)
-// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][WARN] %s\n", time, message))
-// 			if err != nil {
-// 				panic("Coudle not write data to log file. Permission denied")
-// 			}
-// 		}
-
-// 	// severe level
-// 	case 4:
-// 		if Settings.logLvl >= 1 {
-// 			fmt.Printf("[%s][!SERVE!]:%s\n", time, message)
-// 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][!SERVE!] %s\n", time, message))
-// 			if err != nil {
-// 				panic("Coudle not write data to log file. Permission denied")
-// 			}
-// 		}
-
-// 	// sth wrong with level
-// 	default:
-// 		PrintLog(4, "A code error was found in PrintLog")
-// 	}
-// }
-
-// var LogFile *os.File
-
-// func linkLog() {
-
-// 	file, err := os.OpenFile(filepath.Join(programPath, "logs/Pichubot-"+string(time.Now().Format("2006-01-02"))+".log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-// 	if err != nil {
-// 		if os.IsNotExist(err) {
-// 			file, err = os.Create(filepath.Join(programPath, "logs/Pichubot-"+string(time.Now().Format("2006-01-02"))+".log"))
-// 			if err != nil {
-// 				panic("[!SERVE!] Could not create the log file. Permission denied.") // maybe
-// 			}
-// 		} else {
-// 			panic("[!SERVE!] Can't read log Please check your permission.")
-// 		}
-// 	}
-// 	LogFile = file
-
-// }

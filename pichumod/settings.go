@@ -14,11 +14,7 @@ import (
 var PgLoc, _ = os.Executable()
 var PgPath = filepath.Dir(PgLoc)
 
-var Config struct {
-	Logmode string
-	Loglvl  int
-	WSIP    string
-}
+var Config ConfigStu
 
 func ReadSettings() {
 	file, err := os.Open("settings.hjson")

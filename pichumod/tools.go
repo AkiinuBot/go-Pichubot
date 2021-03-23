@@ -17,7 +17,6 @@ var Connect *websocket.Conn
 
 func init() {
 	LinkLog()
-	defer LogFile.Close()
 }
 
 // 传入带CQ码的消息(string) 解析为[map[]...]并返回;
@@ -44,23 +43,6 @@ func CQcodeParse(rawmessage string) []map[string]interface{} {
 	default:
 		return output
 	}
-}
-
-// ws发包
-func sendwspack(message string) error {
-	err := Connect.WriteMessage(websocket.TextMessage, []byte(message))
-	return err
-}
-
-// 发送私聊信息
-// message - 消息内容 自动解析CQ码
-// user_id - 对方QQ号
-func SendPrivateMsg(message string, user_id int) error {
-	err := sendwspack(fmt.Sprintf(
-		"{\"action\": \"send_private_msg\",\"params\":{\"user_id\": %d, \"message\": \"%s\"},\"echo\":\"PrivateMsg|%s\"}",
-		user_id, message, message))
-	// main.PrintLog(2, "[↑][私聊][%d]: %s", user_id, message)
-	return err
 }
 
 var LogFile *os.File
@@ -98,7 +80,7 @@ func PrintLog(level int, message string) {
 			fmt.Printf("[%s][Debug]:%s\n", time, message)
 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][Debug] %s\n", time, message))
 			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
+				panic(err)
 			}
 		}
 
@@ -108,7 +90,7 @@ func PrintLog(level int, message string) {
 			fmt.Printf("[%s][INFO]:%s\n", time, message)
 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][INFO] %s\n", time, message))
 			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
+				panic(err)
 			}
 		}
 
@@ -118,7 +100,7 @@ func PrintLog(level int, message string) {
 			fmt.Printf("[%s][WARN]:%s\n", time, message)
 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][WARN] %s\n", time, message))
 			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
+				panic(err)
 			}
 		}
 
@@ -128,7 +110,7 @@ func PrintLog(level int, message string) {
 			fmt.Printf("[%s][!SERVE!]:%s\n", time, message)
 			_, err := LogFile.WriteString(fmt.Sprintf("[%s][!SERVE!] %s\n", time, message))
 			if err != nil {
-				panic("Coudle not write data to log file. Permission denied")
+				panic(err)
 			}
 		}
 
@@ -136,4 +118,14 @@ func PrintLog(level int, message string) {
 	default:
 		PrintLog(4, "A code error was found in PrintLog")
 	}
+}
+
+// bool to string
+func BoolToStr(B bool) string {
+	if B {
+		return "true"
+	} else if !B {
+		return "false"
+	}
+	return ""
 }
