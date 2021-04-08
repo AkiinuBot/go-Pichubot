@@ -1,8 +1,8 @@
 // 存放所有结构体
 package pichumod
 
-var RawEvents = make(map[string]RawEvent) // 事件ID列表
-var Events []Event                        // 事件ID列表
+var RawEvents = make(map[string]RawEvent) // 短事件ID列表
+var Events = make(map[string]Event)       // 事件ID列表
 
 type RawEvent struct {
 	Channel *chan map[string]interface{}

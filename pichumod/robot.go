@@ -4,6 +4,7 @@ package pichumod
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,7 +47,7 @@ func GroupParse(eventinfo MessageGroup) {
 			// 长事件案例
 			case "复读机":
 				// 新建长事件方法
-				ch := NewEvent(eventinfo.Sender.UserID, eventinfo.GroupID, "fdj")
+				ch, eid := NewEvent(eventinfo.Sender.UserID, eventinfo.GroupID, "fdj")
 				defer close(*ch)
 
 				SendGroupMsg("我，就是人类的本质", eventinfo.GroupID)
@@ -60,6 +61,7 @@ func GroupParse(eventinfo MessageGroup) {
 						SendGroupMsg(r, eventinfo.GroupID)
 					}
 				}
+				delete(Events, eid) // 结束事件
 			}
 		}
 	} else {
@@ -75,12 +77,12 @@ func GroupParse(eventinfo MessageGroup) {
 	}
 }
 
-func NewEvent(userid float64, groupid float64, etype string) *chan string {
-	// var eventid string = strconv.FormatInt(time.Now().UnixNano(), 10) // 事件ID 以时间戳定义
+func NewEvent(userid float64, groupid float64, etype string) (*chan string, string) {
+	var eventid string = strconv.FormatInt(time.Now().UnixNano(), 10) // 事件ID 以时间戳定义
 	ch := make(chan string)
-	Events = append(Events, Event{Channel: &ch, UserID: userid, GroupID: groupid, Eventtype: etype})
+	Events[eventid] = Event{Channel: &ch, UserID: userid, GroupID: groupid, Eventtype: etype}
 	fmt.Println(Events)
-	return &ch
+	return &ch, eventid
 }
 
 // func commandParse() []string {}
