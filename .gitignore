@@ -2,7 +2,9 @@
 data/
 logs/
 test/
+# test/*
 device.json
 config.hjson
 go-cqhttp-v*
 go-Pichubot-base*
+go-Pichubot-base.exe

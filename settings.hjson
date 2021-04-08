@@ -5,4 +5,7 @@
 
 			#cqhttp 的websocket服务器地址
 			ws-ip: "localhost:6700"
+
+			# 机器人主人QQ
+			master-qq: 2773173293
 	}

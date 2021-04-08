@@ -56,6 +56,7 @@ func ConfigParse(data map[string]interface{}) {
 	default:
 		panic("Found something wrong in settings.hjson.logmode")
 	}
+	Config.MasterQQ = data["master-qq"].(float64)
 }
 
 func createSettings() {
