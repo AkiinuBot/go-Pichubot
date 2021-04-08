@@ -42,7 +42,7 @@ func core(host string) {
 		fmt.Println("成功连接到 Websocket 服务器" + pichumod.Config.WSIP)
 		// tools.connect = c
 		pichumod.Connect = c
-		go pichumod.SendPrivateMsg("机器人成功启动", 2773173293)
+		go pichumod.SendPrivateMsg("机器人成功启动", pichumod.Config.MasterQQ)
 		// time.Sleep(1 * time.Second)
 	}
 
