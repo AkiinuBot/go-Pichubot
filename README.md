@@ -11,8 +11,8 @@ Clone/Download Repositories | 下载/拉取代码
 `$ git clone https://github.com/0ojixueseno0/go-Pichubot.git`
 
 
-## Example
-Normal/Short Event
+<!-- ## Example
+Normal/Short Event -->
 
 
 
