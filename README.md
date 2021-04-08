@@ -32,3 +32,6 @@ case "message":
 
 ```
 
+## Talk About Pichubot
+
+> 皮丘bot program 群: 645995997
