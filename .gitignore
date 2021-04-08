@@ -1,0 +1,6 @@
+data/
+logs/
+test/
+device.json
+config.hjson
+*.exe
