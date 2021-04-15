@@ -19,17 +19,17 @@ Clone/Download Repositories | 下载/拉取代码
 package main
 
 import (
-	"github.com/0ojixueseno0/go-Pichubot-base/mainbot"
-	"github.com/0ojixueseno0/go-Pichubot-base/pichumod"
+  "github.com/0ojixueseno0/go-Pichubot-base/mainbot"
+  "github.com/0ojixueseno0/go-Pichubot-base/pichumod"
 )
 
 func init() {
-	mainbot.OnPrivateMsg = pichumod.PrivateParse
+  mainbot.OnPrivateMsg = pichumod.PrivateParse
   // mainbot.Event = your function(eventinfo)
 }
 
 func main() {
-	mainbot.Run() // RUN!!!
+  mainbot.Run() // RUN!!!
 }
 
 ```
@@ -42,24 +42,24 @@ func main() {
 //! 以下均为Example 可以全部删掉 也可以提供参考
 
 func PrivateParse(eventinfo MessagePrivate) { // 建立事件 解析内容
-	if match, _ := regexp.MatchString(`(?m)^[!|！].*`, eventinfo.Message); match { // 判断消息内容是否为Command
-		var command []string = strings.Fields(eventinfo.Message[1:])
-		if len(command) > 0 {
+  if match, _ := regexp.MatchString(`(?m)^[!|！].*`, eventinfo.Message); match { // 判断消息内容是否为Command
+    var command []string = strings.Fields(eventinfo.Message[1:])
+    if len(command) > 0 {
 
-			// fmt.Println(command[0])
-			switch command[0] {
-			case "test", "helloworld":
-				var m string
-				if time.Now().Format("PM") == "PM" {
-					m = "下午"
-				} else {
-					m = "上午"
-				}
-				nowtime := time.Now().Format(fmt.Sprintf("2006年1月2日%s3:04", m))
-				SendPrivateMsg(fmt.Sprintf("这是一条测试消息！\n你好，我的朋友%s！\n现在是：%s", eventinfo.Sender.Nickname, nowtime), eventinfo.UserID)
-			}
-		}
-	}
+      // fmt.Println(command[0])
+      switch command[0] {
+      case "test", "helloworld":
+        var m string
+        if time.Now().Format("PM") == "PM" {
+          m = "下午"
+        } else {
+          m = "上午"
+        }
+        nowtime := time.Now().Format(fmt.Sprintf("2006年1月2日%s3:04", m))
+        SendPrivateMsg(fmt.Sprintf("这是一条测试消息！\n你好，我的朋友%s！\n现在是：%s", eventinfo.Sender.Nickname, nowtime), eventinfo.UserID)
+      }
+    }
+  }
 }
 ```
 
