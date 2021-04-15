@@ -1,3 +1,4 @@
+//! 整合大部分常用api于函数内
 package pichumod
 
 import (

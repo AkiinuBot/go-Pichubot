@@ -48,7 +48,12 @@ func CQcodeParse(rawmessage string) []map[string]interface{} {
 var LogFile *os.File
 
 func LinkLog() {
-
+	if exist, err := PathExists("./logs"); !exist && err == nil {
+		err := os.Mkdir("./logs", os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
 	file, err := os.OpenFile(filepath.Join(PgPath, "logs/Pichubot-"+string(time.Now().Format("2006-01-02"))+".log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -62,6 +67,18 @@ func LinkLog() {
 	}
 	LogFile = file
 
+}
+
+// 判断文件夹是否存在
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 // 在屏幕上输出日志并储存

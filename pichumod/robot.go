@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+//! 以下均为Example 可以全部删掉 也可以提供参考
+
 func PrivateParse(eventinfo MessagePrivate) { // 建立事件 解析内容
 	if match, _ := regexp.MatchString(`(?m)^[!|！].*`, eventinfo.Message); match { // 判断消息内容是否为Command
 		var command []string = strings.Fields(eventinfo.Message[1:])
@@ -24,22 +26,14 @@ func PrivateParse(eventinfo MessagePrivate) { // 建立事件 解析内容
 					m = "上午"
 				}
 				nowtime := time.Now().Format(fmt.Sprintf("2006年1月2日%s3:04", m))
-				// fmt.Println(eventinfo.UserID)
 				SendPrivateMsg(fmt.Sprintf("这是一条测试消息！\n你好，我的朋友%s！\n现在是：%s", eventinfo.Sender.Nickname, nowtime), eventinfo.UserID)
-
-				// case "大学习", "daxuexi", "dxx":
-				// 	if len(command) > 1 {
-				// 		println()
-				// 	} else {
-
-				// 	}
 			}
 		}
 	}
 }
 
 func GroupParse(eventinfo MessageGroup) {
-	if match, _ := regexp.MatchString(`(?m)^[!|！].*`, eventinfo.Message); match {
+	if match, _ := regexp.MatchString(`(?m)^[!！].*`, eventinfo.Message); match {
 		var command []string = strings.Fields(eventinfo.Message[1:])
 		if len(command) > 0 {
 			// commandParse
@@ -84,5 +78,3 @@ func NewEvent(userid float64, groupid float64, etype string) (*chan string, stri
 	fmt.Println(Events)
 	return &ch, eventid
 }
-
-// func commandParse() []string {}

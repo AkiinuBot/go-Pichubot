@@ -4,3 +4,4 @@ test/
 device.json
 config.hjson
 *.exe
+webframe/
