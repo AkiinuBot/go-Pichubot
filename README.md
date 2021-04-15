@@ -13,8 +13,7 @@ Clone/Download Repositories | 下载/拉取代码
 
 ## Example
 
-
-``./main.go``
+>./main.go
 
 ```go
 package main
@@ -35,7 +34,9 @@ func main() {
 
 ```
 
-``./pichumod/robot.go:PrivateParse(...)``
+ 
+
+> ./pichumod/robot.go:PrivateParse(...)
 
 ```go
 //! 以下均为Example 可以全部删掉 也可以提供参考
