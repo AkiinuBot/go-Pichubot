@@ -279,10 +279,10 @@ func parseGroupupload(r map[string]interface{}) pichumod.GroupUpload {
 			Size  float64
 			Busid float64
 		}{
-			Id:    r["file"].(map[string]string)["id"],
-			Name:  r["file"].(map[string]string)["name"],
-			Size:  r["file"].(map[string]float64)["size"],
-			Busid: r["file"].(map[string]float64)["busid"],
+			Id:    r["file"].(map[string]interface{})["id"].(string),
+			Name:  r["file"].(map[string]interface{})["name"].(string),
+			Size:  r["file"].(map[string]interface{})["size"].(float64),
+			Busid: r["file"].(map[string]interface{})["busid"].(float64),
 		}}
 	return e
 }
