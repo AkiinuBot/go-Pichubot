@@ -258,10 +258,10 @@ func msgParse(receive map[string]interface{}) {
 
 func parsePrivate(r map[string]interface{}) MessagePrivate {
 	e := MessagePrivate{
-		SelfID:     r["self_id"].(int64),
+		SelfID:     int64(r["self_id"].(float64)),
 		SubType:    r["sub_type"].(string),
-		MessageID:  r["message_id"].(int64),
-		UserID:     r["user_id"].(int64),
+		MessageID:  int64(r["message_id"].(float64)),
+		UserID:     int64(r["user_id"].(float64)),
 		Message:    r["message"].(string),
 		RawMessage: r["raw_message"].(string),
 		Sender: struct {
@@ -270,21 +270,21 @@ func parsePrivate(r map[string]interface{}) MessagePrivate {
 			Sex      string
 			Age      int64
 		}{
-			UserID:   r["sender"].(map[string]interface{})["user_id"].(int64),
+			UserID:   int64(r["sender"].(map[string]interface{})["user_id"].(float64)),
 			Nickname: r["sender"].(map[string]interface{})["nickname"].(string),
 			Sex:      r["sender"].(map[string]interface{})["sex"].(string),
-			Age:      r["sender"].(map[string]interface{})["age"].(int64),
+			Age:      int64(r["sender"].(map[string]interface{})["age"].(float64)),
 		}}
 	return e
 }
 
 func parseGroup(r map[string]interface{}) MessageGroup {
 	e := MessageGroup{
-		SelfID:     r["self_id"].(int64),
+		SelfID:     int64(r["self_id"].(float64)),
 		SubType:    r["sub_type"].(string),
-		MessageID:  r["message_id"].(int64),
-		GroupID:    r["group_id"].(int64),
-		UserID:     r["user_id"].(int64),
+		MessageID:  int64(r["message_id"].(float64)),
+		GroupID:    int64(r["group_id"].(float64)),
+		UserID:     int64(r["user_id"].(float64)),
 		Message:    r["message"].(string),
 		RawMessage: r["raw_message"].(string)}
 	switch e.SubType {
@@ -300,11 +300,11 @@ func parseGroup(r map[string]interface{}) MessageGroup {
 			Role     string
 			Title    string
 		}{
-			UserID:   r["sender"].(map[string]interface{})["user_id"].(int64),
+			UserID:   int64(r["sender"].(map[string]interface{})["user_id"].(float64)),
 			Nickname: r["sender"].(map[string]interface{})["nickname"].(string),
 			Card:     r["sender"].(map[string]interface{})["card"].(string),
 			Sex:      r["sender"].(map[string]interface{})["sex"].(string),
-			Age:      r["sender"].(map[string]interface{})["age"].(int64),
+			Age:      int64(r["sender"].(map[string]interface{})["age"].(float64)),
 			Area:     r["sender"].(map[string]interface{})["area"].(string),
 			Level:    r["sender"].(map[string]interface{})["level"].(string),
 			Role:     r["sender"].(map[string]interface{})["role"].(string),
@@ -315,7 +315,7 @@ func parseGroup(r map[string]interface{}) MessageGroup {
 			Name string
 			Flag string
 		}{
-			Id:   r["anonymous"].(map[string]interface{})["id"].(int64),
+			Id:   int64(r["anonymous"].(map[string]interface{})["id"].(float64)),
 			Name: r["anonymous"].(map[string]interface{})["name"].(string),
 			Flag: r["anonymous"].(map[string]interface{})["flag"].(string)}
 	}
@@ -323,10 +323,10 @@ func parseGroup(r map[string]interface{}) MessageGroup {
 }
 func parseGroupupload(r map[string]interface{}) GroupUpload {
 	e := GroupUpload{
-		Time:     r["time"].(int64),
-		Self_id:  r["self_id"].(int64),
-		Group_id: r["group_id"].(int64),
-		User_id:  r["user_id"].(int64),
+		Time:     int64(r["time"].(float64)),
+		Self_id:  int64(r["self_id"].(float64)),
+		Group_id: int64(r["group_id"].(float64)),
+		User_id:  int64(r["user_id"].(float64)),
 		File: struct {
 			Id    string
 			Name  string
@@ -335,104 +335,104 @@ func parseGroupupload(r map[string]interface{}) GroupUpload {
 		}{
 			Id:    r["file"].(map[string]interface{})["id"].(string),
 			Name:  r["file"].(map[string]interface{})["name"].(string),
-			Size:  r["file"].(map[string]interface{})["size"].(int64),
-			Busid: r["file"].(map[string]interface{})["busid"].(int64),
+			Size:  int64(r["file"].(map[string]interface{})["size"].(float64)),
+			Busid: int64(r["file"].(map[string]interface{})["busid"].(float64)),
 		}}
 	return e
 }
 func parseGroupadmin(r map[string]interface{}) GroupAdmin {
 	e := GroupAdmin{
-		Time:     r["time"].(int64),
-		Self_id:  r["self_id"].(int64),
+		Time:     int64(r["time"].(float64)),
+		Self_id:  int64(r["self_id"].(float64)),
 		Sub_type: r["sub_type"].(string),
-		Group_id: r["group_id"].(int64),
-		User_id:  r["user_id"].(int64),
+		Group_id: int64(r["group_id"].(float64)),
+		User_id:  int64(r["user_id"].(float64)),
 	}
 	return e
 }
 func parseGroupdecrease(r map[string]interface{}) GroupDecrease {
 	e := GroupDecrease{
-		Time:        r["time"].(int64),
-		Self_id:     r["self_id"].(int64),
+		Time:        int64(r["time"].(float64)),
+		Self_id:     int64(r["self_id"].(float64)),
 		Sub_type:    r["sub_type"].(string),
-		Group_id:    r["group_id"].(int64),
-		Operator_id: r["operator_id"].(int64),
-		User_id:     r["user_id"].(int64),
+		Group_id:    int64(r["group_id"].(float64)),
+		Operator_id: int64(r["operator_id"].(float64)),
+		User_id:     int64(r["user_id"].(float64)),
 	}
 	return e
 }
 func parseGroupincrease(r map[string]interface{}) GroupIncrease {
 	e := GroupIncrease{
-		Time:        r["time"].(int64),
-		Self_id:     r["self_id"].(int64),
+		Time:        int64(r["time"].(float64)),
+		Self_id:     int64(r["self_id"].(float64)),
 		Sub_type:    r["sub_type"].(string),
-		Group_id:    r["group_id"].(int64),
-		Operator_id: r["operator_id"].(int64),
-		User_id:     r["user_id"].(int64),
+		Group_id:    int64(r["group_id"].(float64)),
+		Operator_id: int64(r["operator_id"].(float64)),
+		User_id:     int64(r["user_id"].(float64)),
 	}
 	return e
 }
 func parseGroupban(r map[string]interface{}) GroupBan {
 	e := GroupBan{
-		Time:        r["time"].(int64),
-		Self_id:     r["self_id"].(int64),
+		Time:        int64(r["time"].(float64)),
+		Self_id:     int64(r["self_id"].(float64)),
 		Sub_type:    r["sub_type"].(string),
-		Group_id:    r["group_id"].(int64),
-		Operator_id: r["operator_id"].(int64),
-		User_id:     r["user_id"].(int64),
-		Duration:    r["duration"].(int64),
+		Group_id:    int64(r["group_id"].(float64)),
+		Operator_id: int64(r["operator_id"].(float64)),
+		User_id:     int64(r["user_id"].(float64)),
+		Duration:    int64(r["duration"].(float64)),
 	}
 	return e
 }
 func parseFriendAdd(r map[string]interface{}) FriendAdd {
 	e := FriendAdd{
-		Time:    r["time"].(int64),
-		Self_id: r["self_id"].(int64),
-		User_id: r["user_id"].(int64),
+		Time:    int64(r["time"].(float64)),
+		Self_id: int64(r["self_id"].(float64)),
+		User_id: int64(r["user_id"].(float64)),
 	}
 	return e
 }
 
 func parseGrouprecall(r map[string]interface{}) GroupRecall {
 	e := GroupRecall{
-		Time:        r["time"].(int64),
-		Self_id:     r["self_id"].(int64),
-		Group_id:    r["group_id"].(int64),
-		User_id:     r["user_id"].(int64),
-		Operator_id: r["operator_id"].(int64),
-		Message_id:  r["message_id"].(int64),
+		Time:        int64(r["time"].(float64)),
+		Self_id:     int64(r["self_id"].(float64)),
+		Group_id:    int64(r["group_id"].(float64)),
+		User_id:     int64(r["user_id"].(float64)),
+		Operator_id: int64(r["operator_id"].(float64)),
+		Message_id:  int64(r["message_id"].(float64)),
 	}
 	return e
 }
 func parseFriendrecall(r map[string]interface{}) FriendRecall {
 	e := FriendRecall{
-		Time:       r["time"].(int64),
-		Self_id:    r["self_id"].(int64),
-		User_id:    r["user_id"].(int64),
-		Message_id: r["message_id"].(int64),
+		Time:       int64(r["time"].(float64)),
+		Self_id:    int64(r["self_id"].(float64)),
+		User_id:    int64(r["user_id"].(float64)),
+		Message_id: int64(r["message_id"].(float64)),
 	}
 	return e
 }
 func parseNotify(r map[string]interface{}) Notify {
 	e := Notify{
-		Time:     r["time"].(int64),
-		Self_id:  r["self_id"].(int64),
+		Time:     int64(r["time"].(float64)),
+		Self_id:  int64(r["self_id"].(float64)),
 		Sub_type: r["sub_type"].(string),
-		Group_id: r["group_id"].(int64),
-		User_id:  r["user_id"].(int64),
+		Group_id: int64(r["group_id"].(float64)),
+		User_id:  int64(r["user_id"].(float64)),
 	}
 	if e.Sub_type == "honor" {
 		e.Honor_type = r["honor_type"].(string)
 	} else {
-		e.Target_id = r["target_id"].(int64)
+		e.Target_id = int64(r["target_id"].(float64))
 	}
 	return e
 }
 func parseFriendrequest(r map[string]interface{}) FriendRequest {
 	e := FriendRequest{
-		Time:    r["time"].(int64),
-		Self_id: r["self_id"].(int64),
-		User_id: r["user_id"].(int64),
+		Time:    int64(r["time"].(float64)),
+		Self_id: int64(r["self_id"].(float64)),
+		User_id: int64(r["user_id"].(float64)),
 		Comment: r["comment"].(string),
 		Flag:    r["flag"].(string),
 	}
@@ -440,11 +440,11 @@ func parseFriendrequest(r map[string]interface{}) FriendRequest {
 }
 func parseGrouprequest(r map[string]interface{}) GroupRequest {
 	e := GroupRequest{
-		Time:     r["time"].(int64),
-		Self_id:  r["self_id"].(int64),
+		Time:     int64(r["time"].(float64)),
+		Self_id:  int64(r["self_id"].(float64)),
 		Sub_type: r["sub_type"].(string),
-		Group_id: r["group_id"].(int64),
-		User_id:  r["user_id"].(int64),
+		Group_id: int64(r["group_id"].(float64)),
+		User_id:  int64(r["user_id"].(float64)),
 		Comment:  r["comment"].(string),
 		Flag:     r["flag"].(string),
 	}
@@ -453,18 +453,18 @@ func parseGrouprequest(r map[string]interface{}) GroupRequest {
 
 func parseMetalifecycle(r map[string]interface{}) MetaLifecycle {
 	e := MetaLifecycle{
-		Time:     r["time"].(int64),
-		Self_id:  r["self_id"].(int64),
+		Time:     int64(r["time"].(float64)),
+		Self_id:  int64(r["self_id"].(float64)),
 		Sub_type: r["sub_type"].(string),
 	}
 	return e
 }
 func parseMetaheartbeat(r map[string]interface{}) MetaHeartbeat {
 	e := MetaHeartbeat{
-		Time:     r["time"].(int64),
-		Self_id:  r["self_id"].(int64),
+		Time:     int64(r["time"].(float64)),
+		Self_id:  int64(r["self_id"].(float64)),
 		Status:   r["status"],
-		Interval: r["interval"].(int64),
+		Interval: int64(r["interval"].(float64)),
 	}
 	return e
 }
