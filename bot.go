@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/0ojixueseno0/go-Pichubot/utils"
 	"github.com/gorilla/websocket"
 	"github.com/wonderivan/logger"
 )
@@ -58,7 +57,7 @@ func NewBot() *Bot {
 }
 
 func (bot *Bot) Run() {
-	utils.InitLogger(bot.Config.Loglvl) // 初始化日志文件
+	InitLogger(bot.Config.Loglvl) // 初始化日志文件
 	for {
 		func(host string, path string) {
 			//connet to websocket server

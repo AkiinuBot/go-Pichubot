@@ -1,4 +1,4 @@
-package utils
+package Pichubot
 
 import (
 	"encoding/json"
