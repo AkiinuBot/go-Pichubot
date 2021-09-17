@@ -1,5 +1,5 @@
 //! 整合大部分常用api于函数内
-package pichumod
+package Pichubot
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/wonderivan/logger"
 )
 
 // ws发包
@@ -22,26 +23,25 @@ func apiSend(apiType string, params string) (map[string]interface{}, error) {
 	ch := make(chan map[string]interface{})
 	defer close(ch)
 
-	chinfo := RawEvent{Channel: &ch}
+	chinfo := ShortEvent{Channel: &ch}
 
-	RawEvents[eventid] = chinfo
+	ShortEvents[eventid] = chinfo
 
-	PrintLog(1, fmt.Sprintf("[↑][EID:%s][Type:%s]S:%s", eventid, apiType, params))
+	logger.Debug(fmt.Sprintf("[↑][EID:%s][Type:%s]S:%s", eventid, apiType, params))
 	err := sendwspack(fmt.Sprintf(`{"action": "%s", "params": %s, "echo": "%s"}`, apiType, params, eventid))
 	var receive map[string]interface{}
 	if err == nil {
 		select {
 		case receive = <-ch:
-			// fmt.Println(receive)
-			PrintLog(1, fmt.Sprintf("[↓][EID:%s][Type:%s]R:%s", eventid, apiType, receive))
+			logger.Debug(fmt.Sprintf("[↓][EID:%s][Type:%s]R:%s", eventid, apiType, receive))
 		case <-time.After(5 * time.Second):
-			PrintLog(3, fmt.Sprintf("[↓][EID:%s][Type:%s]Timeout", eventid, apiType))
+			logger.Warn(fmt.Sprintf("[↓][EID:%s][Type:%s]Timeout", eventid, apiType))
 			err = errors.New("timout in func apiSend")
 		}
 	} else {
-		fmt.Println(err)
+		logger.Warn(err)
 	}
-	delete(RawEvents, eventid)
+	delete(ShortEvents, eventid)
 	return receive, err
 }
 
@@ -52,16 +52,15 @@ func apiSend(apiType string, params string) (map[string]interface{}, error) {
 // message - 消息内容 自动解析CQ码
 // user_id - 对方QQ号
 // return message_id error
-func SendPrivateMsg(message string, user_id float64) (map[string]interface{}, error) {
-	res, err := apiSend("send_private_msg", fmt.Sprintf(`{"user_id": %.f, "message": "%s"}`, user_id, message))
-	// fmt.Println(res)
+func SendPrivateMsg(message string, user_id int64) (map[string]interface{}, error) {
+	res, err := apiSend("send_private_msg", fmt.Sprintf(`{"user_id": %d, "message": "%s"}`, user_id, message))
 	if err != nil {
 		return nil, err
 	}
 	if res["status"].(string) == "ok" {
-		PrintLog(2, fmt.Sprintf("[↑][私聊][%.f]: %s", user_id, message))
+		logger.Info(fmt.Sprintf("[↑][私聊][%d]: %s", user_id, message))
 	} else {
-		PrintLog(3, fmt.Sprintf("[↑][发送失败][私聊][%.f]: %s", user_id, message))
+		logger.Warn(fmt.Sprintf("[↑][发送失败][私聊][%d]: %s", user_id, message))
 	}
 	return res, err
 }
@@ -70,17 +69,16 @@ func SendPrivateMsg(message string, user_id float64) (map[string]interface{}, er
 // message  - 要发送的内容
 // group_id - 群号
 // return message_id error
-func SendGroupMsg(message string, group_id float64) (map[string]interface{}, error) {
-	res, err := apiSend("send_group_msg", fmt.Sprintf(`{"group_id": %.f, "message": "%s"}`, group_id, message))
+func SendGroupMsg(message string, group_id int64) (map[string]interface{}, error) {
+	res, err := apiSend("send_group_msg", fmt.Sprintf(`{"group_id": %d, "message": "%s"}`, group_id, message))
 	if err != nil {
 		return nil, err
 	}
 	if res["status"].(string) == "ok" {
-		PrintLog(2, fmt.Sprintf("[↑][群聊][%.f]: %s", group_id, message))
+		logger.Info(fmt.Sprintf("[↑][群聊][%d]: %s", group_id, message))
 	} else {
-		PrintLog(3, fmt.Sprintf("[↑][发送失败][群聊][%.f]: %s", group_id, message))
+		logger.Warn(fmt.Sprintf("[↑][发送失败][群聊][%d]: %s", group_id, message))
 	}
-	// PrintLog(2, fmt.Sprintf("[↑][群聊][%.f] %s", group_id, message))
 	return res, err
 }
 
@@ -90,7 +88,7 @@ func SendGroupMsg(message string, group_id float64) (map[string]interface{}, err
 // toid    - 群号/QQ号
 // 本条API并不是 Onebot/CQhttp 原生API
 // return message_id error
-func SendMsg(msgtype string, message string, toid float64) (map[string]interface{}, error) {
+func SendMsg(msgtype string, message string, toid int64) (map[string]interface{}, error) {
 	var err error = nil
 	var res map[string]interface{}
 	switch msgtype {
@@ -143,7 +141,7 @@ func SendLike(user_id int, times int) error {
 // reject_add_request - 是否拒绝再次入群
 // return err
 func SetGroupKick(group_id int, user_id int, reject_add_request bool) error {
-	_, err := apiSend("set_group_kick", fmt.Sprintf(`{"group_id": %d, "user_id": %d, "reject_add_request": %s}`, group_id, user_id, BoolToStr(reject_add_request)))
+	_, err := apiSend("set_group_kick", fmt.Sprintf(`{"group_id": %d, "user_id": %d, "reject_add_request": %v}`, group_id, user_id, reject_add_request))
 	return err
 }
 
@@ -172,7 +170,7 @@ func SetGroupAnonymousBan(group_id int, anymous_flag string, duration int) error
 // enable 是否禁言
 // return err
 func SetGroupWholeBan(group_id int, enable bool) error {
-	_, err := apiSend("set_group_kick", fmt.Sprintf(`{"group_id": %d, "enable": %s}`, group_id, BoolToStr(enable)))
+	_, err := apiSend("set_group_kick", fmt.Sprintf(`{"group_id": %d, "enable": %v}`, group_id, enable))
 	return err
 }
 
@@ -182,7 +180,7 @@ func SetGroupWholeBan(group_id int, enable bool) error {
 // enable true 为设置，false 为取消
 // return err
 func SetGroupAdmin(group_id int, user_id int, enable bool) error {
-	_, err := apiSend("set_group_admin", fmt.Sprintf(`{"group_id": %d, "user_id": %d , "enable": %s}`, group_id, user_id, BoolToStr(enable)))
+	_, err := apiSend("set_group_admin", fmt.Sprintf(`{"group_id": %d, "user_id": %d , "enable": %v}`, group_id, user_id, enable))
 	return err
 }
 
@@ -191,7 +189,7 @@ func SetGroupAdmin(group_id int, user_id int, enable bool) error {
 // enable 是否允许匿名聊天
 // return err
 func SetGroupAnonymous(group_id int, enable bool) error {
-	_, err := apiSend("set_group_anonymous", fmt.Sprintf(`{"group_id": %d, "enable": %s}`, group_id, BoolToStr(enable)))
+	_, err := apiSend("set_group_anonymous", fmt.Sprintf(`{"group_id": %d, "enable": %v}`, group_id, enable))
 	return err
 }
 
@@ -219,7 +217,7 @@ func SetGroupName(group_id int, group_name string) error {
 // is_dismiss 是否解散，如果登录号是群主，则仅在此项为 true 时能够解散
 // return err
 func SetGroupLeave(group_id int, is_dismiss bool) error {
-	_, err := apiSend("set_group_leave", fmt.Sprintf(`{"group_id": %d, "is_dismiss": %s}`, group_id, BoolToStr(is_dismiss)))
+	_, err := apiSend("set_group_leave", fmt.Sprintf(`{"group_id": %d, "is_dismiss": %v}`, group_id, is_dismiss))
 	return err
 }
 
@@ -238,7 +236,7 @@ func SetGroupSpecialTitle(group_id int, user_id int, special_title string) error
 // approve 是否同意请求
 // return err
 func SetFriendAddRequest(flag string, approve bool) error {
-	_, err := apiSend("set_friend_add_request", fmt.Sprintf(`{"flag": "%s", "approve": %s}`, flag, BoolToStr(approve)))
+	_, err := apiSend("set_friend_add_request", fmt.Sprintf(`{"flag": "%s", "approve": %v}`, flag, approve))
 	return err
 }
 
@@ -248,7 +246,7 @@ func SetFriendAddRequest(flag string, approve bool) error {
 // reason 拒绝理由(只有在拒绝时有效)
 // return err
 func SetGroupAddRequest(flag string, approve bool, reason string) error {
-	_, err := apiSend("set_group_add_request", fmt.Sprintf(`{"flag": "%s", "sub_type": "add", "approve": %s, "reason": "%s"}`, flag, BoolToStr(approve), reason))
+	_, err := apiSend("set_group_add_request", fmt.Sprintf(`{"flag": "%s", "sub_type": "add", "approve": %v, "reason": "%s"}`, flag, approve, reason))
 	return err
 }
 
@@ -258,7 +256,7 @@ func SetGroupAddRequest(flag string, approve bool, reason string) error {
 // reason 拒绝理由(只有在拒绝时有效)
 // return err
 func SetGroupInviteRequest(flag string, approve bool, reason string) error {
-	_, err := apiSend("set_group_add_request", fmt.Sprintf(`{"flag": "%s", "sub_type": "invite", "approve": %s, "reason": "%s"}`, flag, BoolToStr(approve), reason))
+	_, err := apiSend("set_group_add_request", fmt.Sprintf(`{"flag": "%s", "sub_type": "invite", "approve": %v, "reason": "%s"}`, flag, approve, reason))
 	return err
 }
 
