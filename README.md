@@ -31,3 +31,7 @@ func main() {
   Bot.Run()
 }
 ```
+
+## Talk About Pichubot
+
+> 皮丘bot program 群: 645995997
