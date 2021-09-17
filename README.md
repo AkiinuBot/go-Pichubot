@@ -7,6 +7,27 @@
 # Quick Start
 
 ```go
-import "github.com/0ojixueseno0/go-Pichubot"
-func main()
+import (
+  Pichubot "github.com/0ojixueseno0/go-Pichubot"
+)
+
+func action(eventinfo Pichubot.MessagePrivate) {
+  // 处理某个私聊消息
+  return
+}
+
+func main() {
+  // 向事件池里添加函数
+  Pichubot.OnPrivateMsg = append(Pichubot.OnPrivateMsg, action) 
+
+  //初始化一个Bot 并更改配置
+  Bot := Pichubot.NewBot()
+  Bot.Config = Pichubot.Config{
+    Loglvl:   "INFO",
+    Host:     "0.0.0.0:6700",
+    MasterQQ: "2773173293",
+    Path:     "/"
+  }
+  Bot.Run()
+}
 ```
