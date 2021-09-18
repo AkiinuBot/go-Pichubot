@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/wonderivan/logger"
 )
 
 // ws发包
@@ -27,19 +26,19 @@ func apiSend(apiType string, params string) (map[string]interface{}, error) {
 
 	ShortEvents[eventid] = chinfo
 
-	logger.Debug(fmt.Sprintf("[↑][EID:%s][Type:%s]S:%s", eventid, apiType, params))
+	Logger.Debug(fmt.Sprintf("[↑][EID:%s][Type:%s]S:%s", eventid, apiType, params))
 	err := sendwspack(fmt.Sprintf(`{"action": "%s", "params": %s, "echo": "%s"}`, apiType, params, eventid))
 	var receive map[string]interface{}
 	if err == nil {
 		select {
 		case receive = <-ch:
-			logger.Debug(fmt.Sprintf("[↓][EID:%s][Type:%s]R:%s", eventid, apiType, receive))
+			Logger.Debug(fmt.Sprintf("[↓][EID:%s][Type:%s]R:%s", eventid, apiType, receive))
 		case <-time.After(5 * time.Second):
-			logger.Warn(fmt.Sprintf("[↓][EID:%s][Type:%s]Timeout", eventid, apiType))
+			Logger.Warning(fmt.Sprintf("[↓][EID:%s][Type:%s]Timeout", eventid, apiType))
 			err = errors.New("timout in func apiSend")
 		}
 	} else {
-		logger.Warn(err)
+		Logger.Warning(err.Error())
 	}
 	delete(ShortEvents, eventid)
 	return receive, err
@@ -58,9 +57,9 @@ func SendPrivateMsg(message string, user_id int64) (map[string]interface{}, erro
 		return nil, err
 	}
 	if res["status"].(string) == "ok" {
-		logger.Info(fmt.Sprintf("[↑][私聊][%d]: %s", user_id, message))
+		Logger.Info(fmt.Sprintf("[↑][私聊][%d]: %s", user_id, message))
 	} else {
-		logger.Warn(fmt.Sprintf("[↑][发送失败][私聊][%d]: %s", user_id, message))
+		Logger.Warning(fmt.Sprintf("[↑][发送失败][私聊][%d]: %s", user_id, message))
 	}
 	return res, err
 }
@@ -75,9 +74,9 @@ func SendGroupMsg(message string, group_id int64) (map[string]interface{}, error
 		return nil, err
 	}
 	if res["status"].(string) == "ok" {
-		logger.Info(fmt.Sprintf("[↑][群聊][%d]: %s", group_id, message))
+		Logger.Info(fmt.Sprintf("[↑][群聊][%d]: %s", group_id, message))
 	} else {
-		logger.Warn(fmt.Sprintf("[↑][发送失败][群聊][%d]: %s", group_id, message))
+		Logger.Warning(fmt.Sprintf("[↑][发送失败][群聊][%d]: %s", group_id, message))
 	}
 	return res, err
 }

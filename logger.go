@@ -1,10 +1,20 @@
 package Pichubot
 
 import (
-	"encoding/json"
 	"os"
 
-	"github.com/wonderivan/logger"
+	go_logger "github.com/phachon/go-logger"
+)
+
+const (
+	LOGGER_LEVEL_EMERGENCY = iota
+	LOGGER_LEVEL_ALERT
+	LOGGER_LEVEL_CRITICAL
+	LOGGER_LEVEL_ERROR
+	LOGGER_LEVEL_WARNING
+	LOGGER_LEVEL_NOTICE
+	LOGGER_LEVEL_INFO
+	LOGGER_LEVEL_DEBUG
 )
 
 /*
@@ -44,6 +54,8 @@ type logconfig struct {
 	// }
 }
 
+var Logger *go_logger.Logger
+
 // 判断文件夹是否存在
 func pathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
@@ -65,7 +77,7 @@ func init() {
 	}
 }
 
-func InitLogger(lvl string) {
+func InitLogger(lvl int) {
 	var config logconfig
 	config.TimeFormat = "2006-01-02 15:04:05"  // 输出日志开头时间格式
 	config.Console.Level = "TRAC"              // 控制台日志输出等级
@@ -78,11 +90,31 @@ func InitLogger(lvl string) {
 	config.File.Maxlines = -1                  // 日志文件有效期
 	config.File.Append = true                  // 是否支持日志追加
 	config.File.Permit = "0660"                // 新创建的日志文件权限属性
-	data, err := json.Marshal(config)
-	if err != nil {
-		panic(err)
+	// data, err := json.Marshal(config)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// logger.SetLogger(string(data[:]))
+	Logger = go_logger.NewLogger()
+	Logger.Detach("console")
+	consoleConfig := &go_logger.ConsoleConfig{
+		Color:      true,
+		JsonFormat: false,
+		Format:     "%timestamp_format% [%level_string%] %body%",
 	}
-	logger.SetLogger(string(data[:]))
+	Logger.Attach("console", lvl, consoleConfig)
+
+	fileConfig := &go_logger.FileConfig{
+		Filename:   "logs/Pichubot.log",
+		MaxSize:    1024 * 1024,
+		MaxLine:    10000,
+		DateSlice:  "d",
+		JsonFormat: false,
+		Format:     "%millisecond_format% [%level_string%] [%file%:%line%] %body%",
+	}
+	Logger.Attach("file", lvl, fileConfig)
+
+	Logger.SetAsync()
 }
 
 // "TimeFormat":"2006-01-02 15:04:05",

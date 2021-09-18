@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/wonderivan/logger"
 )
 
 //* Message Event
@@ -58,6 +57,7 @@ func NewBot() *Bot {
 
 func (bot *Bot) Run() {
 	InitLogger(bot.Config.Loglvl) // 初始化日志文件
+	defer Logger.Flush()
 	for {
 		func(host string, path string) {
 			//connet to websocket server
@@ -65,24 +65,24 @@ func (bot *Bot) Run() {
 			var dailer *websocket.Dialer
 			c, _, err := dailer.Dial(url.String(), nil)
 			if err != nil {
-				logger.Error(err)
+				Logger.Error(err.Error())
 				return
 			} else {
 				Connect = c // 传出接口
 				for {
 					_, message, err := c.ReadMessage()
 					if err != nil {
-						logger.Error(err)
+						Logger.Error(err.Error())
 					}
 					m := make(map[string]interface{})
 					if err := json.Unmarshal([]byte(message), &m); err != nil {
-						logger.Error(err)
+						Logger.Error(err.Error())
 					}
 					go msgParse(m)
 				}
 			}
 		}(bot.Config.Host, bot.Config.Path)
-		logger.Info("Websocket will reconnect in 5s")
+		Logger.Info("Websocket will reconnect in 5s")
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -96,7 +96,7 @@ func msgParse(receive map[string]interface{}) {
 		// 私聊信息
 		case "private":
 			var eventinfo MessagePrivate = parsePrivate(receive)
-			logger.Info(fmt.Sprintf("[↓][私聊][%s(%d)]: %s", eventinfo.Sender.Nickname, eventinfo.Sender.UserID, eventinfo.Message))
+			Logger.Info(fmt.Sprintf("[↓][私聊][%s(%d)]: %s", eventinfo.Sender.Nickname, eventinfo.Sender.UserID, eventinfo.Message))
 			for _, function := range OnPrivateMsg {
 				function(eventinfo)
 			}
@@ -104,13 +104,13 @@ func msgParse(receive map[string]interface{}) {
 		// 群聊信息
 		case "group":
 			var eventinfo MessageGroup = parseGroup(receive)
-			logger.Info(fmt.Sprintf("[↓][群聊(%d)][%s(%d)]: %s", eventinfo.GroupID, eventinfo.Sender.Nickname, eventinfo.Sender.UserID, eventinfo.Message))
+			Logger.Info(fmt.Sprintf("[↓][群聊(%d)][%s(%d)]: %s", eventinfo.GroupID, eventinfo.Sender.Nickname, eventinfo.Sender.UserID, eventinfo.Message))
 			for _, function := range OnGroupMsg {
 				function(eventinfo)
 			}
 
 		default:
-			logger.Warn(fmt.Sprintf("Cannot Parse 'message' event -> %s", receive))
+			Logger.Warning(fmt.Sprintf("Cannot Parse 'message' event -> %s", receive))
 		}
 
 		// 通知事件
@@ -119,7 +119,7 @@ func msgParse(receive map[string]interface{}) {
 		// 群文件上传
 		case "group_upload":
 			var eventinfo GroupUpload = parseGroupupload(receive)
-			logger.Info(fmt.Sprintf("[N][群文件(%d)][%d]: %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.File.Name))
+			Logger.Info(fmt.Sprintf("[N][群文件(%d)][%d]: %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.File.Name))
 			for _, function := range OnGroupUpload {
 				function(eventinfo)
 			}
@@ -133,7 +133,7 @@ func msgParse(receive map[string]interface{}) {
 			} else {
 				x = "-"
 			}
-			logger.Info(fmt.Sprintf("[N][群(%d)管理][%s %d]", eventinfo.Group_id, x, eventinfo.User_id))
+			Logger.Info(fmt.Sprintf("[N][群(%d)管理][%s %d]", eventinfo.Group_id, x, eventinfo.User_id))
 			for _, function := range OnGroupAdmin {
 				function(eventinfo)
 			}
@@ -141,7 +141,7 @@ func msgParse(receive map[string]interface{}) {
 			// 群成员减少
 		case "group_decrease":
 			var eventinfo GroupDecrease = parseGroupdecrease(receive)
-			logger.Info(fmt.Sprintf("[N][成员退群(%d)][%d] Type: %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.Sub_type))
+			Logger.Info(fmt.Sprintf("[N][成员退群(%d)][%d] Type: %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.Sub_type))
 			for _, function := range OnGroupDecrease {
 				function(eventinfo)
 			}
@@ -149,7 +149,7 @@ func msgParse(receive map[string]interface{}) {
 			// 群成员增加
 		case "group_increase":
 			var eventinfo GroupIncrease = parseGroupincrease(receive)
-			logger.Info(fmt.Sprintf("[N][成员入群(%d)][%d -> %d] Type: %s", eventinfo.Group_id, eventinfo.Operator_id, eventinfo.User_id, eventinfo.Sub_type))
+			Logger.Info(fmt.Sprintf("[N][成员入群(%d)][%d -> %d] Type: %s", eventinfo.Group_id, eventinfo.Operator_id, eventinfo.User_id, eventinfo.Sub_type))
 			for _, function := range OnGroupIncrease {
 				function(eventinfo)
 			}
@@ -157,7 +157,7 @@ func msgParse(receive map[string]interface{}) {
 			// 群禁言
 		case "group_ban":
 			var eventinfo GroupBan = parseGroupban(receive)
-			logger.Info(fmt.Sprintf("[N][群聊(%d)] %d 禁言/解禁了 %d for %ds", eventinfo.Group_id, eventinfo.Operator_id, eventinfo.User_id, eventinfo.Duration))
+			Logger.Info(fmt.Sprintf("[N][群聊(%d)] %d 禁言/解禁了 %d for %ds", eventinfo.Group_id, eventinfo.Operator_id, eventinfo.User_id, eventinfo.Duration))
 			for _, function := range OnGroupBan {
 				function(eventinfo)
 			}
@@ -165,7 +165,7 @@ func msgParse(receive map[string]interface{}) {
 			// 好友添加
 		case "friend_add":
 			var eventinfo FriendAdd = parseFriendAdd(receive)
-			logger.Info(fmt.Sprintf("[N][成功添加好友]%d", eventinfo.User_id))
+			Logger.Info(fmt.Sprintf("[N][成功添加好友]%d", eventinfo.User_id))
 			for _, function := range OnFriendAdd {
 				function(eventinfo)
 			}
@@ -173,7 +173,7 @@ func msgParse(receive map[string]interface{}) {
 			// 群消息撤回
 		case "group_recall":
 			var eventinfo GroupRecall = parseGrouprecall(receive)
-			logger.Info(fmt.Sprintf("[N][群聊(%d)][%d] 撤回了消息(id): %d", eventinfo.Group_id, eventinfo.User_id, eventinfo.Message_id))
+			Logger.Info(fmt.Sprintf("[N][群聊(%d)][%d] 撤回了消息(id): %d", eventinfo.Group_id, eventinfo.User_id, eventinfo.Message_id))
 			for _, function := range OnGroupRecall {
 				function(eventinfo)
 			}
@@ -181,7 +181,7 @@ func msgParse(receive map[string]interface{}) {
 			// 好友消息撤回
 		case "friend_recall":
 			var eventinfo FriendRecall = parseFriendrecall(receive)
-			logger.Info(fmt.Sprintf("[N][私聊][%d] 撤回了消息(id): %d", eventinfo.User_id, eventinfo.Message_id))
+			Logger.Info(fmt.Sprintf("[N][私聊][%d] 撤回了消息(id): %d", eventinfo.User_id, eventinfo.Message_id))
 			for _, function := range OnFriendRecall {
 				function(eventinfo)
 			}
@@ -189,13 +189,13 @@ func msgParse(receive map[string]interface{}) {
 			// 群内戳一戳 群红包运气王 群成员荣誉变更
 		case "notify":
 			var eventinfo Notify = parseNotify(receive)
-			logger.Info(fmt.Sprintf("[N][Notify][Group:%d] %d -> %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.Sub_type))
+			Logger.Info(fmt.Sprintf("[N][Notify][Group:%d] %d -> %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.Sub_type))
 			for _, function := range OnNotify {
 				function(eventinfo)
 			}
 
 		default:
-			logger.Warn(fmt.Sprintf("Cannot Parse 'notice' event -> %s", receive))
+			Logger.Warning(fmt.Sprintf("Cannot Parse 'notice' event -> %s", receive))
 		}
 
 		// 请求事件
@@ -204,7 +204,7 @@ func msgParse(receive map[string]interface{}) {
 		// 添加好友申请
 		case "friend":
 			var eventinfo FriendRequest = parseFriendrequest(receive)
-			logger.Info(fmt.Sprintf("[↓][好友申请] %d 申请加你为好友 -> %s", eventinfo.User_id, eventinfo.Comment))
+			Logger.Info(fmt.Sprintf("[↓][好友申请] %d 申请加你为好友 -> %s", eventinfo.User_id, eventinfo.Comment))
 			for _, function := range OnFriendRequest {
 				function(eventinfo)
 			}
@@ -213,13 +213,13 @@ func msgParse(receive map[string]interface{}) {
 		case "group":
 			// SetGroupInviteRequest(receive["flag"].(string), true, "") // 自动同意加群
 			var eventinfo GroupRequest = parseGrouprequest(receive)
-			logger.Info(fmt.Sprintf("[↓][加群/邀请] %d %s -> %d(验证信息: %s)", eventinfo.User_id, eventinfo.Sub_type, eventinfo.Group_id, eventinfo.Comment))
+			Logger.Info(fmt.Sprintf("[↓][加群/邀请] %d %s -> %d(验证信息: %s)", eventinfo.User_id, eventinfo.Sub_type, eventinfo.Group_id, eventinfo.Comment))
 			for _, function := range OnGroupRequest {
 				function(eventinfo)
 			}
 
 		default:
-			logger.Warn(fmt.Sprintf("Cannot Parse 'request' event -> %s", receive))
+			Logger.Warning(fmt.Sprintf("Cannot Parse 'request' event -> %s", receive))
 		}
 		// 元事件
 	case "meta_event":
@@ -227,7 +227,7 @@ func msgParse(receive map[string]interface{}) {
 		// 生命周期
 		case "lifecycle":
 			var eventinfo MetaLifecycle = parseMetalifecycle(receive)
-			logger.Debug(fmt.Sprintf("[↓][Lifecycle][%d] Type: %s", eventinfo.Self_id, eventinfo.Sub_type))
+			Logger.Debug(fmt.Sprintf("[↓][Lifecycle][%d] Type: %s", eventinfo.Self_id, eventinfo.Sub_type))
 			for _, function := range OnMetaLifecycle {
 				function(eventinfo)
 			}
@@ -235,14 +235,14 @@ func msgParse(receive map[string]interface{}) {
 			// 心跳包
 		case "heartbeat":
 			var eventinfo MetaHeartbeat = parseMetaheartbeat(receive)
-			logger.Debug(fmt.Sprintf("[↓][Heartbeat][%d] Type: %s", eventinfo.Self_id, eventinfo.Status))
+			Logger.Debug(fmt.Sprintf("[↓][Heartbeat][%d] Type: %s", eventinfo.Self_id, eventinfo.Status))
 			for _, function := range OnMetaHeartbeat {
 				function(eventinfo)
 			}
 
-			// logger.Debug("Received a heartbeat package.")
+			// Logger.Debug("Received a heartbeat package.")
 		default:
-			logger.Warn(fmt.Sprintf("Cannot Parse 'meta_event' event -> %s", receive))
+			Logger.Warning(fmt.Sprintf("Cannot Parse 'meta_event' event -> %s", receive))
 		}
 	default:
 		// 短事件回调
@@ -251,7 +251,7 @@ func msgParse(receive map[string]interface{}) {
 				*ShortEvents[receive["echo"].(string)].Channel <- receive
 			}
 		} else {
-			logger.Warn(fmt.Sprintf("Got Error Package -> %s", receive))
+			Logger.Warning(fmt.Sprintf("Got Error Package -> %s", receive))
 		}
 	}
 }
