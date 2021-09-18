@@ -129,7 +129,7 @@ func GetForwardMsg(id string) (map[string]interface{}, error) {
 // user_id - 对方QQ号
 // times - 点赞次数(每个好友每天最多 10 次)
 // return err
-func SendLike(user_id int, times int) error {
+func SendLike(user_id int64, times int64) error {
 	_, err := apiSend("send_like", fmt.Sprintf(`{"user_id": %d, "times": %d}`, user_id, times))
 	return err
 }
@@ -139,7 +139,7 @@ func SendLike(user_id int, times int) error {
 // user_id - 要踢的 QQ 号
 // reject_add_request - 是否拒绝再次入群
 // return err
-func SetGroupKick(group_id int, user_id int, reject_add_request bool) error {
+func SetGroupKick(group_id int64, user_id int64, reject_add_request bool) error {
 	_, err := apiSend("set_group_kick", fmt.Sprintf(`{"group_id": %d, "user_id": %d, "reject_add_request": %v}`, group_id, user_id, reject_add_request))
 	return err
 }
@@ -149,7 +149,7 @@ func SetGroupKick(group_id int, user_id int, reject_add_request bool) error {
 // user_id - 要禁言的QQ号
 // duration - 禁言时长(s) 0表示取消禁言
 // return err
-func SetGroupBan(group_id int, user_id int, duration int) error {
+func SetGroupBan(group_id int64, user_id int64, duration int64) error {
 	_, err := apiSend("set_group_ban", fmt.Sprintf(`{"group_id": %d, "user_id": %d, "duration": "%d"}`, group_id, user_id, duration))
 	return err
 }
@@ -159,7 +159,7 @@ func SetGroupBan(group_id int, user_id int, duration int) error {
 // anymous_flag - 匿名用户的 flag（需从群消息上报的数据中获得）
 // duration - 禁言时长(s) 0表示取消禁言
 // return err
-func SetGroupAnonymousBan(group_id int, anymous_flag string, duration int) error {
+func SetGroupAnonymousBan(group_id int64, anymous_flag string, duration int64) error {
 	_, err := apiSend("set_group_ban", fmt.Sprintf(`{"group_id": %d, "anymous_flag": "%s", "duration": "%d"}`, group_id, anymous_flag, duration))
 	return err
 }
@@ -168,7 +168,7 @@ func SetGroupAnonymousBan(group_id int, anymous_flag string, duration int) error
 // group_id 群号
 // enable 是否禁言
 // return err
-func SetGroupWholeBan(group_id int, enable bool) error {
+func SetGroupWholeBan(group_id int64, enable bool) error {
 	_, err := apiSend("set_group_kick", fmt.Sprintf(`{"group_id": %d, "enable": %v}`, group_id, enable))
 	return err
 }
@@ -178,7 +178,7 @@ func SetGroupWholeBan(group_id int, enable bool) error {
 // user_id QQ号
 // enable true 为设置，false 为取消
 // return err
-func SetGroupAdmin(group_id int, user_id int, enable bool) error {
+func SetGroupAdmin(group_id int64, user_id int64, enable bool) error {
 	_, err := apiSend("set_group_admin", fmt.Sprintf(`{"group_id": %d, "user_id": %d , "enable": %v}`, group_id, user_id, enable))
 	return err
 }
@@ -187,7 +187,7 @@ func SetGroupAdmin(group_id int, user_id int, enable bool) error {
 // group_id 群号
 // enable 是否允许匿名聊天
 // return err
-func SetGroupAnonymous(group_id int, enable bool) error {
+func SetGroupAnonymous(group_id int64, enable bool) error {
 	_, err := apiSend("set_group_anonymous", fmt.Sprintf(`{"group_id": %d, "enable": %v}`, group_id, enable))
 	return err
 }
@@ -197,7 +197,7 @@ func SetGroupAnonymous(group_id int, enable bool) error {
 // user_id 成员QQ
 // card 空字符串表示删除群名片
 // return err
-func SetGroupCard(group_id int, user_id int, card string) error {
+func SetGroupCard(group_id int64, user_id int64, card string) error {
 	_, err := apiSend("set_group_card", fmt.Sprintf(`{"group_id": %d, "user_id": %d , "card": "%s"}`, group_id, user_id, card))
 	return err
 }
@@ -206,7 +206,7 @@ func SetGroupCard(group_id int, user_id int, card string) error {
 // group_id 群号
 // group_name 新群名
 // return err
-func SetGroupName(group_id int, group_name string) error {
+func SetGroupName(group_id int64, group_name string) error {
 	_, err := apiSend("set_group_name", fmt.Sprintf(`{"group_id": %d, "group_name": "%s"}`, group_id, group_name))
 	return err
 }
@@ -215,7 +215,7 @@ func SetGroupName(group_id int, group_name string) error {
 // group_id 群号
 // is_dismiss 是否解散，如果登录号是群主，则仅在此项为 true 时能够解散
 // return err
-func SetGroupLeave(group_id int, is_dismiss bool) error {
+func SetGroupLeave(group_id int64, is_dismiss bool) error {
 	_, err := apiSend("set_group_leave", fmt.Sprintf(`{"group_id": %d, "is_dismiss": %v}`, group_id, is_dismiss))
 	return err
 }
@@ -225,7 +225,7 @@ func SetGroupLeave(group_id int, is_dismiss bool) error {
 // user_id 成员QQ
 // special_title 空字符串表示删除专属头衔
 // return err
-func SetGroupSpecialTitle(group_id int, user_id int, special_title string) error {
+func SetGroupSpecialTitle(group_id int64, user_id int64, special_title string) error {
 	_, err := apiSend("set_group_special_title", fmt.Sprintf(`{"group_id": %d, "user_id": %d , "special_title": "%s"}`, group_id, user_id, special_title))
 	return err
 }

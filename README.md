@@ -6,6 +6,9 @@
 
 # ⚡ Quick Start
 
+[中文文档](https://im0o.top/pichubot-doc/)
+
+
 ```go
 import (
   Pichubot "github.com/0ojixueseno0/go-Pichubot"
