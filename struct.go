@@ -1,9 +1,6 @@
 // 存放所有结构体
 package Pichubot
 
-/*
- Loglvl:
-*/
 type Config struct {
 	Loglvl   int
 	Host     string

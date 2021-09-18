@@ -36,19 +36,6 @@ var OnGroupRequest []func(eventinfo GroupRequest) = []func(eventinfo GroupReques
 var OnMetaLifecycle []func(eventinfo MetaLifecycle) = []func(eventinfo MetaLifecycle){} // 生命周期
 var OnMetaHeartbeat []func(eventinfo MetaHeartbeat) = []func(eventinfo MetaHeartbeat){} // 心跳包
 
-//* Events
-type ShortEvent struct {
-	Channel *chan map[string]interface{}
-}
-type LongEvent struct {
-	UserID    int64
-	GroupID   int64
-	Channel   *chan string
-	Eventtype string
-}
-
-var ShortEvents = make(map[string]ShortEvent) // 短事件容器
-var LongEvents = make(map[string]LongEvent)   // 长事件容器
 var Connect *websocket.Conn
 
 func NewBot() *Bot {
@@ -73,10 +60,12 @@ func (bot *Bot) Run() {
 					_, message, err := c.ReadMessage()
 					if err != nil {
 						Logger.Error(err.Error())
+						break // 重启bot循环 防止陷入死循环
 					}
 					m := make(map[string]interface{})
 					if err := json.Unmarshal([]byte(message), &m); err != nil {
 						Logger.Error(err.Error())
+						break // 重启bot循环 防止陷入死循环
 					}
 					go msgParse(m)
 				}
