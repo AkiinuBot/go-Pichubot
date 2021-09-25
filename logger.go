@@ -1,43 +1,25 @@
-package Pichubot
+package pichubot
 
 import (
-	"os"
-
 	go_logger "github.com/phachon/go-logger"
 )
 
 const (
-	LOGGER_LEVEL_EMERGENCY = iota
-	LOGGER_LEVEL_ALERT
-	LOGGER_LEVEL_CRITICAL
-	LOGGER_LEVEL_ERROR
-	LOGGER_LEVEL_WARNING
-	LOGGER_LEVEL_NOTICE
-	LOGGER_LEVEL_INFO
-	LOGGER_LEVEL_DEBUG
+	LOGGER_LEVEL_EMERGENCY = iota // 系统级紧急，比如磁盘出错，内存异常，网络不可用等
+	LOGGER_LEVEL_ALERT            // 系统级警告，比如数据库访问异常，配置文件出错等
+	LOGGER_LEVEL_CRITICAL         // 系统级危险，比如权限出错，访问异常等
+	LOGGER_LEVEL_ERROR            // 用户级错误
+	LOGGER_LEVEL_WARNING          // 用户级警告
+	LOGGER_LEVEL_NOTICE           // 用户级重要
+	LOGGER_LEVEL_INFO             // 用户级提示
+	LOGGER_LEVEL_DEBUG            // 用户级调试
 )
 
+// 日志接口
 var Logger *go_logger.Logger
 
-// 判断文件夹是否存在
-func pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
 func init() {
-	if exist, err := pathExists("./logs"); !exist && err == nil {
-		err := os.Mkdir("./logs", os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-	}
+	CheckPath("./logs")
 }
 
 func InitLogger(lvl int) {
