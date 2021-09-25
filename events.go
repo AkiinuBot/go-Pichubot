@@ -1,4 +1,4 @@
-package Pichubot
+package pichubot
 
 import (
 	"strconv"
