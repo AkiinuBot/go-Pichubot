@@ -1,16 +1,28 @@
+package pichubot
+
 //! 整合大部分常用api于函数内
-package Pichubot
 
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-// ws发包
+var Connect *websocket.Conn // Websocket 连接接口
+
+// ConnectWS 连接至websocket服务器
+func ConnectWS(url url.URL) (*websocket.Conn, *http.Response, error) {
+	var dailer *websocket.Dialer
+	c, r, err := dailer.Dial(url.String(), nil)
+	return c, r, err
+}
+
+// sendwspack ws发包
 func sendwspack(message string) error {
 	err := Connect.WriteMessage(websocket.TextMessage, []byte(message))
 	return err
@@ -47,6 +59,7 @@ func apiSend(apiType string, params string) (map[string]interface{}, error) {
 // onebot API: https://git.io/Jmy1B
 // cqhttp API: https://github.com/Mrs4s/go-cqhttp/blob/master/docs/cqhttp.md#api-1
 
+// SendPrivateMsg
 // 发送私聊信息
 // message - 消息内容 自动解析CQ码
 // user_id - 对方QQ号
@@ -64,6 +77,7 @@ func SendPrivateMsg(message string, user_id int64) (map[string]interface{}, erro
 	return res, err
 }
 
+// SendGroupMsg
 // 发送群聊消息
 // message  - 要发送的内容
 // group_id - 群号
@@ -81,6 +95,7 @@ func SendGroupMsg(message string, group_id int64) (map[string]interface{}, error
 	return res, err
 }
 
+// SendMsg
 // 发送消息
 // msgtype - 消息类型 group/private
 // message - 消息内容
@@ -88,7 +103,7 @@ func SendGroupMsg(message string, group_id int64) (map[string]interface{}, error
 // 本条API并不是 Onebot/CQhttp 原生API
 // return message_id error
 func SendMsg(msgtype string, message string, toid int64) (map[string]interface{}, error) {
-	var err error = nil
+	var err error
 	var res map[string]interface{}
 	switch msgtype {
 	case "group":
@@ -101,6 +116,7 @@ func SendMsg(msgtype string, message string, toid int64) (map[string]interface{}
 	return res, err
 }
 
+// DeleteMsg
 // 撤回消息
 // message_id - 消息id 发出时的返回值
 // return error
@@ -109,6 +125,7 @@ func DeleteMsg(message_id int32) error {
 	return err
 }
 
+// GetMsg
 // 获取消息
 // message_id - 获取消息
 // return {time message_type message_id real_id sender message} error
@@ -117,6 +134,7 @@ func GetMsg(message_id int32) (map[string]interface{}, error) {
 	return res, err
 }
 
+// GetForwardMsg
 // 获取合并转发消息
 // id - 合并转发 ID
 // return message err
@@ -125,6 +143,7 @@ func GetForwardMsg(id string) (map[string]interface{}, error) {
 	return res, err
 }
 
+// SendLike
 // 发送好友赞
 // user_id - 对方QQ号
 // times - 点赞次数(每个好友每天最多 10 次)
@@ -134,6 +153,7 @@ func SendLike(user_id int64, times int64) error {
 	return err
 }
 
+// SetGroupKick
 // 群组踢人
 // group_id - 群号
 // user_id - 要踢的 QQ 号
@@ -144,6 +164,7 @@ func SetGroupKick(group_id int64, user_id int64, reject_add_request bool) error 
 	return err
 }
 
+// SetGroupBan
 // 群组单人禁言
 // group_id - 群号
 // user_id - 要禁言的QQ号
@@ -154,6 +175,7 @@ func SetGroupBan(group_id int64, user_id int64, duration int64) error {
 	return err
 }
 
+// SetGroupAnonymousBan
 // 群组匿名用户禁言
 // group_id - 群号
 // anymous_flag - 匿名用户的 flag（需从群消息上报的数据中获得）
@@ -164,6 +186,7 @@ func SetGroupAnonymousBan(group_id int64, anymous_flag string, duration int64) e
 	return err
 }
 
+// SetGroupWholeBan
 // 群全员禁言
 // group_id 群号
 // enable 是否禁言
@@ -173,6 +196,7 @@ func SetGroupWholeBan(group_id int64, enable bool) error {
 	return err
 }
 
+// SetGroupAdmin
 // 群组设置管理员(需要机器人为群主)
 // group_id 群号
 // user_id QQ号
@@ -183,6 +207,7 @@ func SetGroupAdmin(group_id int64, user_id int64, enable bool) error {
 	return err
 }
 
+// SetGroupAnonymous
 // 群组匿名
 // group_id 群号
 // enable 是否允许匿名聊天
@@ -192,6 +217,7 @@ func SetGroupAnonymous(group_id int64, enable bool) error {
 	return err
 }
 
+// SetGroupCard
 // 设置群名片
 // group_id 群号
 // user_id 成员QQ
@@ -202,6 +228,7 @@ func SetGroupCard(group_id int64, user_id int64, card string) error {
 	return err
 }
 
+// SetGroupName
 // 设置群名
 // group_id 群号
 // group_name 新群名
@@ -211,6 +238,7 @@ func SetGroupName(group_id int64, group_name string) error {
 	return err
 }
 
+// SetGroupLeave
 // 退群
 // group_id 群号
 // is_dismiss 是否解散，如果登录号是群主，则仅在此项为 true 时能够解散
@@ -220,6 +248,7 @@ func SetGroupLeave(group_id int64, is_dismiss bool) error {
 	return err
 }
 
+// SetGroupSpecialTitle
 // 设置群组专属头衔
 // group_id 群号
 // user_id 成员QQ
@@ -230,6 +259,7 @@ func SetGroupSpecialTitle(group_id int64, user_id int64, special_title string) e
 	return err
 }
 
+// SetFriendAddRequest
 // 处理加好友请求
 // flag 加好友请求的 flag（需从上报的数据中获得）
 // approve 是否同意请求
@@ -239,6 +269,7 @@ func SetFriendAddRequest(flag string, approve bool) error {
 	return err
 }
 
+// SetGroupAddRequest
 // 处理加群请求
 // flag 加群请求的 flag
 // approve 是否同意请求
@@ -249,6 +280,7 @@ func SetGroupAddRequest(flag string, approve bool, reason string) error {
 	return err
 }
 
+// SetGroupInviteRequest
 // 处理加群邀请
 // flag 加群邀请的 flag
 // approve 是否同意邀请
@@ -259,6 +291,7 @@ func SetGroupInviteRequest(flag string, approve bool, reason string) error {
 	return err
 }
 
+// GetLoginInfo
 // 获取登录号信息
 // return {user_id nickname} err
 func GetLoginInfo() (map[string]interface{}, error) {
@@ -268,6 +301,7 @@ func GetLoginInfo() (map[string]interface{}, error) {
 
 // 以下为 CQhttp 的API
 
+// GetImage
 // 获取图片信息
 // file string
 // get_image
@@ -280,6 +314,7 @@ func GetImage(file string) (map[string]interface{}, error) {
 	return res, err
 }
 
+// OCRImage
 // 图片OCR
 // image file - string
 // return texts			TextDetection[]	OCR结果

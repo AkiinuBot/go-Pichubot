@@ -1,74 +1,43 @@
-package Pichubot
+package pichubot
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
-//* Message Event
-//? 消息事件
-var OnPrivateMsg []func(eventinfo MessagePrivate) = []func(eventinfo MessagePrivate){} // 私聊消息事件
-var OnGroupMsg []func(eventinfo MessageGroup) = []func(eventinfo MessageGroup){}       // 群聊消息事件
+var Listeners listeners // Listeners 监听器
 
-//* Notice Event
-//? 提醒事件
-var OnGroupUpload []func(eventinfo GroupUpload) = []func(eventinfo GroupUpload){}       // 群文件上传
-var OnGroupAdmin []func(eventinfo GroupAdmin) = []func(eventinfo GroupAdmin){}          // 群管理员变动
-var OnGroupDecrease []func(eventinfo GroupDecrease) = []func(eventinfo GroupDecrease){} // 群成员减少
-var OnGroupIncrease []func(eventinfo GroupIncrease) = []func(eventinfo GroupIncrease){} // 群成员增加
-var OnGroupBan []func(eventinfo GroupBan) = []func(eventinfo GroupBan){}                // 群聊禁言
-var OnFriendAdd []func(eventinfo FriendAdd) = []func(eventinfo FriendAdd){}             // 已经添加好友后的事件
-var OnGroupRecall []func(eventinfo GroupRecall) = []func(eventinfo GroupRecall){}       // 群消息撤回(群聊)
-var OnFriendRecall []func(eventinfo FriendRecall) = []func(eventinfo FriendRecall){}    // 好友消息撤回(私聊)
-var OnNotify []func(eventinfo Notify) = []func(eventinfo Notify){}                      // 群内戳一戳 群红包运气王 群成员荣誉变更
-
-//* Request Event
-//? 请求事件
-var OnFriendRequest []func(eventinfo FriendRequest) = []func(eventinfo FriendRequest){} // 加好友请求
-var OnGroupRequest []func(eventinfo GroupRequest) = []func(eventinfo GroupRequest){}    // 加群请求/邀请
-
-//* Meta Event
-//? 元事件
-var OnMetaLifecycle []func(eventinfo MetaLifecycle) = []func(eventinfo MetaLifecycle){} // 生命周期
-var OnMetaHeartbeat []func(eventinfo MetaHeartbeat) = []func(eventinfo MetaHeartbeat){} // 心跳包
-
-var Connect *websocket.Conn
-
+// NewBot 返回一个Bot对象
 func NewBot() *Bot {
 	return &Bot{}
 }
 
+// 运行Bot
 func (bot *Bot) Run() {
 	InitLogger(bot.Config.Loglvl) // 初始化日志文件
 	defer Logger.Flush()
 	for {
 		func(host string, path string) {
-			//connet to websocket server
-			url := url.URL{Scheme: "ws", Host: host, Path: path}
-			var dailer *websocket.Dialer
-			c, _, err := dailer.Dial(url.String(), nil)
+			c, _, err := ConnectWS(url.URL{Scheme: "ws", Host: host, Path: path})
 			if err != nil {
 				Logger.Error(err.Error())
 				return
-			} else {
-				Connect = c // 传出接口
-				for {
-					_, message, err := c.ReadMessage()
-					if err != nil {
-						Logger.Error(err.Error())
-						break // 重启bot循环 防止陷入死循环
-					}
-					m := make(map[string]interface{})
-					if err := json.Unmarshal([]byte(message), &m); err != nil {
-						Logger.Error(err.Error())
-						break // 重启bot循环 防止陷入死循环
-					}
-					go msgParse(m)
+			}
+			Connect = c // 传出接口
+			for {
+				_, message, err := c.ReadMessage()
+				if err != nil {
+					Logger.Error(err.Error())
+					break // 重启bot循环 防止陷入死循环
 				}
+				m := make(map[string]interface{})
+				if err := json.Unmarshal([]byte(message), &m); err != nil {
+					Logger.Error(err.Error())
+					break // 重启bot循环 防止陷入死循环
+				}
+				go msgParse(m)
 			}
 		}(bot.Config.Host, bot.Config.Path)
 		Logger.Info("Websocket will reconnect in 5s")
@@ -86,7 +55,7 @@ func msgParse(receive map[string]interface{}) {
 		case "private":
 			var eventinfo MessagePrivate = parsePrivate(receive)
 			Logger.Info(fmt.Sprintf("[↓][私聊][%s(%d)]: %s", eventinfo.Sender.Nickname, eventinfo.Sender.UserID, eventinfo.Message))
-			for _, function := range OnPrivateMsg {
+			for _, function := range Listeners.OnPrivateMsg {
 				function(eventinfo)
 			}
 
@@ -94,8 +63,8 @@ func msgParse(receive map[string]interface{}) {
 		case "group":
 			var eventinfo MessageGroup = parseGroup(receive)
 			Logger.Info(fmt.Sprintf("[↓][群聊(%d)][%s(%d)]: %s", eventinfo.GroupID, eventinfo.Sender.Nickname, eventinfo.Sender.UserID, eventinfo.Message))
-			for _, function := range OnGroupMsg {
-				function(eventinfo)
+			for _, function := range Listeners.OnGroupMsg {
+				go function(eventinfo)
 			}
 
 		default:
@@ -108,79 +77,79 @@ func msgParse(receive map[string]interface{}) {
 		// 群文件上传
 		case "group_upload":
 			var eventinfo GroupUpload = parseGroupupload(receive)
-			Logger.Info(fmt.Sprintf("[N][群文件(%d)][%d]: %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.File.Name))
-			for _, function := range OnGroupUpload {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][群文件(%d)][%d]: %s", eventinfo.GroupId, eventinfo.UserId, eventinfo.File.Name))
+			for _, function := range Listeners.OnGroupUpload {
+				go function(eventinfo)
 			}
 
 			// 群管理员变动
 		case "group_admin":
 			var eventinfo GroupAdmin = parseGroupadmin(receive)
-			var x string = "null"
-			if eventinfo.Sub_type == "set" {
+			var x string
+			if eventinfo.SubType == "set" {
 				x = "+"
 			} else {
 				x = "-"
 			}
-			Logger.Info(fmt.Sprintf("[N][群(%d)管理][%s %d]", eventinfo.Group_id, x, eventinfo.User_id))
-			for _, function := range OnGroupAdmin {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][群(%d)管理][%s %d]", eventinfo.GroupId, x, eventinfo.UserId))
+			for _, function := range Listeners.OnGroupAdmin {
+				go function(eventinfo)
 			}
 
 			// 群成员减少
 		case "group_decrease":
 			var eventinfo GroupDecrease = parseGroupdecrease(receive)
-			Logger.Info(fmt.Sprintf("[N][成员退群(%d)][%d] Type: %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.Sub_type))
-			for _, function := range OnGroupDecrease {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][成员退群(%d)][%d] Type: %s", eventinfo.GroupId, eventinfo.UserId, eventinfo.SubType))
+			for _, function := range Listeners.OnGroupDecrease {
+				go function(eventinfo)
 			}
 
 			// 群成员增加
 		case "group_increase":
 			var eventinfo GroupIncrease = parseGroupincrease(receive)
-			Logger.Info(fmt.Sprintf("[N][成员入群(%d)][%d -> %d] Type: %s", eventinfo.Group_id, eventinfo.Operator_id, eventinfo.User_id, eventinfo.Sub_type))
-			for _, function := range OnGroupIncrease {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][成员入群(%d)][%d -> %d] Type: %s", eventinfo.GroupId, eventinfo.OperatorId, eventinfo.UserId, eventinfo.SubType))
+			for _, function := range Listeners.OnGroupIncrease {
+				go function(eventinfo)
 			}
 
 			// 群禁言
 		case "group_ban":
 			var eventinfo GroupBan = parseGroupban(receive)
-			Logger.Info(fmt.Sprintf("[N][群聊(%d)] %d 禁言/解禁了 %d for %ds", eventinfo.Group_id, eventinfo.Operator_id, eventinfo.User_id, eventinfo.Duration))
-			for _, function := range OnGroupBan {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][群聊(%d)] %d 禁言/解禁了 %d for %ds", eventinfo.GroupId, eventinfo.OperatorId, eventinfo.UserId, eventinfo.Duration))
+			for _, function := range Listeners.OnGroupBan {
+				go function(eventinfo)
 			}
 
 			// 好友添加
 		case "friend_add":
 			var eventinfo FriendAdd = parseFriendAdd(receive)
-			Logger.Info(fmt.Sprintf("[N][成功添加好友]%d", eventinfo.User_id))
-			for _, function := range OnFriendAdd {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][成功添加好友]%d", eventinfo.UserId))
+			for _, function := range Listeners.OnFriendAdd {
+				go function(eventinfo)
 			}
 
 			// 群消息撤回
 		case "group_recall":
 			var eventinfo GroupRecall = parseGrouprecall(receive)
-			Logger.Info(fmt.Sprintf("[N][群聊(%d)][%d] 撤回了消息(id): %d", eventinfo.Group_id, eventinfo.User_id, eventinfo.Message_id))
-			for _, function := range OnGroupRecall {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][群聊(%d)][%d] 撤回了消息(id): %d", eventinfo.GroupId, eventinfo.UserId, eventinfo.MessageId))
+			for _, function := range Listeners.OnGroupRecall {
+				go function(eventinfo)
 			}
 
 			// 好友消息撤回
 		case "friend_recall":
 			var eventinfo FriendRecall = parseFriendrecall(receive)
-			Logger.Info(fmt.Sprintf("[N][私聊][%d] 撤回了消息(id): %d", eventinfo.User_id, eventinfo.Message_id))
-			for _, function := range OnFriendRecall {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][私聊][%d] 撤回了消息(id): %d", eventinfo.UserId, eventinfo.MessageId))
+			for _, function := range Listeners.OnFriendRecall {
+				go function(eventinfo)
 			}
 
 			// 群内戳一戳 群红包运气王 群成员荣誉变更
 		case "notify":
 			var eventinfo Notify = parseNotify(receive)
-			Logger.Info(fmt.Sprintf("[N][Notify][Group:%d] %d -> %s", eventinfo.Group_id, eventinfo.User_id, eventinfo.Sub_type))
-			for _, function := range OnNotify {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[N][Notify][Group:%d] %d -> %s", eventinfo.GroupId, eventinfo.UserId, eventinfo.SubType))
+			for _, function := range Listeners.OnNotify {
+				go function(eventinfo)
 			}
 
 		default:
@@ -193,18 +162,18 @@ func msgParse(receive map[string]interface{}) {
 		// 添加好友申请
 		case "friend":
 			var eventinfo FriendRequest = parseFriendrequest(receive)
-			Logger.Info(fmt.Sprintf("[↓][好友申请] %d 申请加你为好友 -> %s", eventinfo.User_id, eventinfo.Comment))
-			for _, function := range OnFriendRequest {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[↓][好友申请] %d 申请加你为好友 -> %s", eventinfo.UserId, eventinfo.Comment))
+			for _, function := range Listeners.OnFriendRequest {
+				go function(eventinfo)
 			}
 
 			// 加群邀请
 		case "group":
 			// SetGroupInviteRequest(receive["flag"].(string), true, "") // 自动同意加群
 			var eventinfo GroupRequest = parseGrouprequest(receive)
-			Logger.Info(fmt.Sprintf("[↓][加群/邀请] %d %s -> %d(验证信息: %s)", eventinfo.User_id, eventinfo.Sub_type, eventinfo.Group_id, eventinfo.Comment))
-			for _, function := range OnGroupRequest {
-				function(eventinfo)
+			Logger.Info(fmt.Sprintf("[↓][加群/邀请] %d %s -> %d(验证信息: %s)", eventinfo.UserId, eventinfo.SubType, eventinfo.GroupId, eventinfo.Comment))
+			for _, function := range Listeners.OnGroupRequest {
+				go function(eventinfo)
 			}
 
 		default:
@@ -216,17 +185,17 @@ func msgParse(receive map[string]interface{}) {
 		// 生命周期
 		case "lifecycle":
 			var eventinfo MetaLifecycle = parseMetalifecycle(receive)
-			Logger.Debug(fmt.Sprintf("[↓][Lifecycle][%d] Type: %s", eventinfo.Self_id, eventinfo.Sub_type))
-			for _, function := range OnMetaLifecycle {
-				function(eventinfo)
+			Logger.Debug(fmt.Sprintf("[↓][Lifecycle][%d] Type: %s", eventinfo.SelfId, eventinfo.SubType))
+			for _, function := range Listeners.OnMetaLifecycle {
+				go function(eventinfo)
 			}
 
 			// 心跳包
 		case "heartbeat":
 			var eventinfo MetaHeartbeat = parseMetaheartbeat(receive)
-			Logger.Debug(fmt.Sprintf("[↓][Heartbeat][%d] Type: %s", eventinfo.Self_id, eventinfo.Status))
-			for _, function := range OnMetaHeartbeat {
-				function(eventinfo)
+			Logger.Debug(fmt.Sprintf("[↓][Heartbeat][%d] Type: %s", eventinfo.SelfId, eventinfo.Status))
+			for _, function := range Listeners.OnMetaHeartbeat {
+				go function(eventinfo)
 			}
 
 			// Logger.Debug("Received a heartbeat package.")
@@ -312,10 +281,10 @@ func parseGroup(r map[string]interface{}) MessageGroup {
 }
 func parseGroupupload(r map[string]interface{}) GroupUpload {
 	e := GroupUpload{
-		Time:     int64(r["time"].(float64)),
-		Self_id:  int64(r["self_id"].(float64)),
-		Group_id: int64(r["group_id"].(float64)),
-		User_id:  int64(r["user_id"].(float64)),
+		Time:    int64(r["time"].(float64)),
+		SelfId:  int64(r["self_id"].(float64)),
+		GroupId: int64(r["group_id"].(float64)),
+		UserId:  int64(r["user_id"].(float64)),
 		File: struct {
 			Id    string
 			Name  string
@@ -331,97 +300,97 @@ func parseGroupupload(r map[string]interface{}) GroupUpload {
 }
 func parseGroupadmin(r map[string]interface{}) GroupAdmin {
 	e := GroupAdmin{
-		Time:     int64(r["time"].(float64)),
-		Self_id:  int64(r["self_id"].(float64)),
-		Sub_type: r["sub_type"].(string),
-		Group_id: int64(r["group_id"].(float64)),
-		User_id:  int64(r["user_id"].(float64)),
+		Time:    int64(r["time"].(float64)),
+		SelfId:  int64(r["self_id"].(float64)),
+		SubType: r["sub_type"].(string),
+		GroupId: int64(r["group_id"].(float64)),
+		UserId:  int64(r["user_id"].(float64)),
 	}
 	return e
 }
 func parseGroupdecrease(r map[string]interface{}) GroupDecrease {
 	e := GroupDecrease{
-		Time:        int64(r["time"].(float64)),
-		Self_id:     int64(r["self_id"].(float64)),
-		Sub_type:    r["sub_type"].(string),
-		Group_id:    int64(r["group_id"].(float64)),
-		Operator_id: int64(r["operator_id"].(float64)),
-		User_id:     int64(r["user_id"].(float64)),
+		Time:       int64(r["time"].(float64)),
+		SelfId:     int64(r["self_id"].(float64)),
+		SubType:    r["sub_type"].(string),
+		GroupId:    int64(r["group_id"].(float64)),
+		OperatorId: int64(r["operator_id"].(float64)),
+		UserId:     int64(r["user_id"].(float64)),
 	}
 	return e
 }
 func parseGroupincrease(r map[string]interface{}) GroupIncrease {
 	e := GroupIncrease{
-		Time:        int64(r["time"].(float64)),
-		Self_id:     int64(r["self_id"].(float64)),
-		Sub_type:    r["sub_type"].(string),
-		Group_id:    int64(r["group_id"].(float64)),
-		Operator_id: int64(r["operator_id"].(float64)),
-		User_id:     int64(r["user_id"].(float64)),
+		Time:       int64(r["time"].(float64)),
+		SelfId:     int64(r["self_id"].(float64)),
+		SubType:    r["sub_type"].(string),
+		GroupId:    int64(r["group_id"].(float64)),
+		OperatorId: int64(r["operator_id"].(float64)),
+		UserId:     int64(r["user_id"].(float64)),
 	}
 	return e
 }
 func parseGroupban(r map[string]interface{}) GroupBan {
 	e := GroupBan{
-		Time:        int64(r["time"].(float64)),
-		Self_id:     int64(r["self_id"].(float64)),
-		Sub_type:    r["sub_type"].(string),
-		Group_id:    int64(r["group_id"].(float64)),
-		Operator_id: int64(r["operator_id"].(float64)),
-		User_id:     int64(r["user_id"].(float64)),
-		Duration:    int64(r["duration"].(float64)),
+		Time:       int64(r["time"].(float64)),
+		SelfId:     int64(r["self_id"].(float64)),
+		SubType:    r["sub_type"].(string),
+		GroupId:    int64(r["group_id"].(float64)),
+		OperatorId: int64(r["operator_id"].(float64)),
+		UserId:     int64(r["user_id"].(float64)),
+		Duration:   int64(r["duration"].(float64)),
 	}
 	return e
 }
 func parseFriendAdd(r map[string]interface{}) FriendAdd {
 	e := FriendAdd{
-		Time:    int64(r["time"].(float64)),
-		Self_id: int64(r["self_id"].(float64)),
-		User_id: int64(r["user_id"].(float64)),
+		Time:   int64(r["time"].(float64)),
+		SelfId: int64(r["self_id"].(float64)),
+		UserId: int64(r["user_id"].(float64)),
 	}
 	return e
 }
 
 func parseGrouprecall(r map[string]interface{}) GroupRecall {
 	e := GroupRecall{
-		Time:        int64(r["time"].(float64)),
-		Self_id:     int64(r["self_id"].(float64)),
-		Group_id:    int64(r["group_id"].(float64)),
-		User_id:     int64(r["user_id"].(float64)),
-		Operator_id: int64(r["operator_id"].(float64)),
-		Message_id:  int64(r["message_id"].(float64)),
+		Time:       int64(r["time"].(float64)),
+		SelfId:     int64(r["self_id"].(float64)),
+		GroupId:    int64(r["group_id"].(float64)),
+		UserId:     int64(r["user_id"].(float64)),
+		OperatorId: int64(r["operator_id"].(float64)),
+		MessageId:  int64(r["message_id"].(float64)),
 	}
 	return e
 }
 func parseFriendrecall(r map[string]interface{}) FriendRecall {
 	e := FriendRecall{
-		Time:       int64(r["time"].(float64)),
-		Self_id:    int64(r["self_id"].(float64)),
-		User_id:    int64(r["user_id"].(float64)),
-		Message_id: int64(r["message_id"].(float64)),
+		Time:      int64(r["time"].(float64)),
+		SelfId:    int64(r["self_id"].(float64)),
+		UserId:    int64(r["user_id"].(float64)),
+		MessageId: int64(r["message_id"].(float64)),
 	}
 	return e
 }
 func parseNotify(r map[string]interface{}) Notify {
 	e := Notify{
-		Time:     int64(r["time"].(float64)),
-		Self_id:  int64(r["self_id"].(float64)),
-		Sub_type: r["sub_type"].(string),
-		Group_id: int64(r["group_id"].(float64)),
-		User_id:  int64(r["user_id"].(float64)),
+		Time:    int64(r["time"].(float64)),
+		SelfId:  int64(r["self_id"].(float64)),
+		SubType: r["sub_type"].(string),
+		GroupId: int64(r["group_id"].(float64)),
+		UserId:  int64(r["user_id"].(float64)),
 	}
-	if e.Sub_type == "honor" {
+	if e.SubType == "honor" {
 		e.Honor_type = r["honor_type"].(string)
 	} else {
-		e.Target_id = int64(r["target_id"].(float64))
+		e.TargetId = int64(r["target_id"].(float64))
 	}
 	return e
 }
 func parseFriendrequest(r map[string]interface{}) FriendRequest {
 	e := FriendRequest{
 		Time:    int64(r["time"].(float64)),
-		Self_id: int64(r["self_id"].(float64)),
-		User_id: int64(r["user_id"].(float64)),
+		SelfId:  int64(r["self_id"].(float64)),
+		UserId:  int64(r["user_id"].(float64)),
 		Comment: r["comment"].(string),
 		Flag:    r["flag"].(string),
 	}
@@ -429,29 +398,29 @@ func parseFriendrequest(r map[string]interface{}) FriendRequest {
 }
 func parseGrouprequest(r map[string]interface{}) GroupRequest {
 	e := GroupRequest{
-		Time:     int64(r["time"].(float64)),
-		Self_id:  int64(r["self_id"].(float64)),
-		Sub_type: r["sub_type"].(string),
-		Group_id: int64(r["group_id"].(float64)),
-		User_id:  int64(r["user_id"].(float64)),
-		Comment:  r["comment"].(string),
-		Flag:     r["flag"].(string),
+		Time:    int64(r["time"].(float64)),
+		SelfId:  int64(r["self_id"].(float64)),
+		SubType: r["sub_type"].(string),
+		GroupId: int64(r["group_id"].(float64)),
+		UserId:  int64(r["user_id"].(float64)),
+		Comment: r["comment"].(string),
+		Flag:    r["flag"].(string),
 	}
 	return e
 }
 
 func parseMetalifecycle(r map[string]interface{}) MetaLifecycle {
 	e := MetaLifecycle{
-		Time:     int64(r["time"].(float64)),
-		Self_id:  int64(r["self_id"].(float64)),
-		Sub_type: r["sub_type"].(string),
+		Time:    int64(r["time"].(float64)),
+		SelfId:  int64(r["self_id"].(float64)),
+		SubType: r["sub_type"].(string),
 	}
 	return e
 }
 func parseMetaheartbeat(r map[string]interface{}) MetaHeartbeat {
 	e := MetaHeartbeat{
 		Time:     int64(r["time"].(float64)),
-		Self_id:  int64(r["self_id"].(float64)),
+		SelfId:   int64(r["self_id"].(float64)),
 		Status:   r["status"],
 		Interval: int64(r["interval"].(float64)),
 	}
