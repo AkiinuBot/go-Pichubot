@@ -24,6 +24,8 @@ type listeners struct {
 	// 元事件
 	OnMetaLifecycle []func(eventinfo MetaLifecycle)
 	OnMetaHeartbeat []func(eventinfo MetaHeartbeat)
+	// 以下为pichubot提供的监听器
+	OnBotStart []func() // 机器人启动时
 }
 
 //plugin struct (WIP)
@@ -38,7 +40,7 @@ type Plugin struct {
 type Config struct {
 	Loglvl   int
 	Host     string
-	MasterQQ string
+	MasterQQ int64
 	Path     string
 }
 

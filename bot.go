@@ -26,6 +26,13 @@ func (bot *Bot) Run() {
 				return
 			}
 			Connect = c // 传出接口
+			// 触发监听器 OnBotStart
+			go func() {
+				for _, function := range Listeners.OnBotStart {
+					go function()
+				}
+			}()
+
 			for {
 				_, message, err := c.ReadMessage()
 				if err != nil {
