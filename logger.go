@@ -20,6 +20,7 @@ var Logger *go_logger.Logger
 
 func init() {
 	CheckPath("./logs")
+	Logger = new(go_logger.Logger)
 }
 
 func InitLogger(lvl int) {
