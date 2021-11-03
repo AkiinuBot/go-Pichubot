@@ -5,6 +5,7 @@ package pichubot
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,6 +25,10 @@ func ConnectWS(url url.URL) (*websocket.Conn, *http.Response, error) {
 
 // sendwspack ws发包
 func sendwspack(message string) error {
+	if PichuBot.Config.MsgAwait {
+		rand.Seed(time.Now().Unix())
+		time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
+	}
 	err := Connect.WriteMessage(websocket.TextMessage, []byte(message))
 	return err
 }
@@ -296,6 +301,67 @@ func SetGroupInviteRequest(flag string, approve bool, reason string) error {
 // return {user_id nickname} err
 func GetLoginInfo() (map[string]interface{}, error) {
 	res, err := apiSend("get_login_info", "")
+	return res, err
+}
+
+// GetStrangerInfo
+// 获取陌生人信息
+// user_id 陌生人QQ
+// no_cache 是否不使用缓存（使用缓存可能更新不及时，但响应更快）
+func GetStrangerInfo(user_id int64, no_cache bool) (map[string]interface{}, error) {
+	res, err := apiSend("get_stranger_info", fmt.Sprintf(`{"user_id": %d, "no_cache": %v}`, user_id, no_cache))
+	return res, err
+}
+
+// GetFriendList
+// 获取好友列表
+// return [{user_id nickname}] err
+func GetFriendList() (map[string]interface{}, error) {
+	res, err := apiSend("get_friend_list", "")
+	return res, err
+}
+
+// GetGroupInfo
+// 获取群信息
+// group_id 群号
+// no_cache 是否不使用缓存（使用缓存可能更新不及时，但响应更快）
+func GetGroupInfo(group_id int64, no_cache bool) (map[string]interface{}, error) {
+	res, err := apiSend("get_group_info", fmt.Sprintf(`{"group_id": %d, "no_cache": %v}`, group_id, no_cache))
+	return res, err
+}
+
+// GetGroupList
+// 获取群列表
+// return [{group_id name}] err
+func GetGroupList() (map[string]interface{}, error) {
+	res, err := apiSend("get_group_list", "")
+	return res, err
+}
+
+// GetGroupMemberInfo
+// 获取群成员信息
+// group_id 群号
+// user_id 成员QQ
+// no_cache 是否不使用缓存（使用缓存可能更新不及时，但响应更快）
+func GetGroupMemberInfo(group_id int64, user_id int64, no_cache bool) (map[string]interface{}, error) {
+	res, err := apiSend("get_group_member_info", fmt.Sprintf(`{"group_id": %d, "user_id": %d, "no_cache": %v}`, group_id, user_id, no_cache))
+	return res, err
+}
+
+// GetGroupMemberList
+// 获取群成员列表
+// group_id 群号
+func GetGroupMemberList(group_id int64) (map[string]interface{}, error) {
+	res, err := apiSend("get_group_member_list", fmt.Sprintf(`{"group_id": %d}`, group_id))
+	return res, err
+}
+
+// GetGroupHonorInfo
+// 获取群荣誉信息
+// group_id 群号
+// type 荣誉类型
+func GetGroupHonorInfo(group_id int64, type_ int) (map[string]interface{}, error) {
+	res, err := apiSend("get_group_honor_info", fmt.Sprintf(`{"group_id": %d, "type": %d}`, group_id, type_))
 	return res, err
 }
 
