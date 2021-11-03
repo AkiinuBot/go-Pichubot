@@ -14,8 +14,11 @@ func NewBot() *Bot {
 	return &Bot{}
 }
 
+var PichuBot *Bot
+
 // 运行Bot
 func (bot *Bot) Run() {
+	PichuBot = bot
 	InitLogger(bot.Config.Loglvl) // 初始化日志文件
 	defer Logger.Flush()
 	for {

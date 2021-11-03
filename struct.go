@@ -42,6 +42,7 @@ type Config struct {
 	Host     string
 	MasterQQ int64
 	Path     string
+	MsgAwait bool
 }
 
 type Bot struct {
