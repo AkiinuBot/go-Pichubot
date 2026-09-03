@@ -1,4 +1,4 @@
-module github.com/0ojixueseno0/go-Pichubot
+module github.com/AkiinuBot/go-Pichubot
 
 go 1.15
 
